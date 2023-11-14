@@ -173,3 +173,4 @@ Assignments
 - all seen objs + estimated positions: `known_objects`
 - location to travel to (long term goal from OPS): `goal_position`
 - camera: `camera`
+- target object (published at beginning of episode): `target_object`
