@@ -161,3 +161,15 @@ Assignments
 -   VODs + Navigation 1 person
 
 -   Map Generation + Object Assignment TBD
+
+## Publisher Channel names
+
+- estimated position: `estimated_pose`
+- particle cloud: `particle_cloud`
+- LaserScan: `base_scan`
+- SimpleMap: `simple_map`
+- RealMap: `real_map` (for SVOD only)
+- Real Position: `current_pose` (for SVOD only)
+- all seen objs + estimated positions: `known_objects`
+- location to travel to (long term goal from OPS): `goal_position`
+- camera: `camera`
