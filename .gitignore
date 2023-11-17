@@ -1,4 +1,4 @@
 /build/
 /devel/
 .idea/
-src/CMakeLists.txt
+src/ros_x_habitat/

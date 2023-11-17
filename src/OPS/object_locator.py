@@ -14,10 +14,8 @@ def get_prob(current_x, current_y, known_dists):
         known_dists = [known_dists]
     for ((dist_x, dist_y), dist_distance, dist_var) in known_dists:
         distance = np.sqrt((current_x - dist_x) ** 2 + (current_y - dist_y) ** 2)
-        prob *= norm_pdf(distance, dist_distance, dist_var)
-        if(prob > 0.01):
-            print(prob, current_x, dist_x, current_y, dist_y, distance, dist_distance, dist_var)
-    return prob
+        prob += (norm_pdf(distance, dist_distance, dist_var))
+    return prob / len(known_dists)
 
 
 # Generate probs
@@ -31,19 +29,3 @@ def calculate_likelihoods(coords, known_dists):
             res_temp.append(i)
         res.append(res_temp)
     return res
-
-
-# # Create and plot multivariate normal distribution
-# x = np.random.uniform(-15, 15, size=10000).T
-# y = np.random.uniform(-15, 15, size=10000).T
-#
-# # ((x,y), dist, var)
-# known_obj_locs_and_distributions = [((-6, 0), 5, 1), ((3, 2), 8, 3), ((1, -4), 6, 2)]
-#
-# xy = zip(x, y)
-# res = calculate_likelihoods(xy, known_obj_locs_and_distributions)
-#
-# # Plot z
-# x, y, z = zip(*res)
-# fig, ax = plt.subplots()
-# ax.scatter(x, y, c=z, cmap='cool', marker='.')

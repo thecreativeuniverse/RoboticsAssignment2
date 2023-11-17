@@ -15,11 +15,9 @@ class SRG:
                 elif temp in self.srg:
                     object_dict.update({temp: self.srg.get(temp).get(obj)})
                 else:
-                    object_dict.update({temp: np.random.uniform(0, 500)})
+                    object_dict.update({temp: np.random.uniform(0, 250)})
             self.srg.update({obj: object_dict})
 
-        # for item in self.srg:
-        #     print(item, self.srg[item])
 
     def get_distance(self, obj, target):
         return self.srg.get(obj).get(target)
