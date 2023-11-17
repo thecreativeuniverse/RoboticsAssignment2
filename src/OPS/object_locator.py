@@ -15,16 +15,21 @@ def get_prob(current_x, current_y, known_dists):
     for ((dist_x, dist_y), dist_distance, dist_var) in known_dists:
         distance = np.sqrt((current_x - dist_x) ** 2 + (current_y - dist_y) ** 2)
         prob *= norm_pdf(distance, dist_distance, dist_var)
+        if(prob > 0.01):
+            print(prob, current_x, dist_x, current_y, dist_y, distance, dist_distance, dist_var)
     return prob
 
 
 # Generate probs
 def calculate_likelihoods(coords, known_dists):
     res = []
-    for temp_x, temp_y in coords:
-        prob_z = get_prob(temp_x, temp_y, known_dists)
-        i = (temp_x, temp_y, prob_z)
-        res.append(i)
+    for layer in coords:
+        res_temp = []
+        for temp_x, temp_y in layer:
+            prob_z = get_prob(temp_x, temp_y, known_dists)
+            i = (temp_x, temp_y, prob_z)
+            res_temp.append(i)
+        res.append(res_temp)
     return res
 
 
