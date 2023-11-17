@@ -20,7 +20,7 @@ def get_prob(current_x, current_y, known_dists):
 # Generate probs
 def calculate_likelihoods(coords, known_dists):
     res = []
-    for temp_x, temp_y in xy:
+    for temp_x, temp_y in coords:
         prob_z = get_prob(temp_x, temp_y, known_dists)
         i = (temp_x, temp_y, prob_z)
         res.append(i)
