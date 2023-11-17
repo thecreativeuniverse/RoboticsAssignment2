@@ -1,6 +1,7 @@
 import rospy
 from geometry_msgs.msg import Pose
 import numpy as np
+from src.srg.srg import SRG
 
 
 class OPS:
@@ -14,7 +15,8 @@ class OPS:
         rospy.publisher("goal_position", Pose)
 
         # SRG
-        self.srg = {} #TODO
+        self.srg = SRG() #TODO
+        # {"thing":{"thing2":2, "thing3":5}, "thing2":{"thing":2,"thing3":10}, "thing3":{"thing":5,"thing2":10}}
 
         self.simple_map_radius = 250
 
@@ -51,6 +53,7 @@ class OPS:
     def calculate_long_term_goal(self):
         if not self._validate_subbed_vars():
             return
+
 
 
     def _validate_subbed_vars(self):

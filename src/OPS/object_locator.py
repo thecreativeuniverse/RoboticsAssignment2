@@ -7,6 +7,7 @@ def norm_pdf(x, mean=0, var=0):
     return (np.exp(-(y ** 2) / 2) / np.sqrt(2 * np.pi)) / var
 
 
+
 def get_prob(current_x, current_y, known_dists):
     prob = 1
     if type(known_dists) is not list:
