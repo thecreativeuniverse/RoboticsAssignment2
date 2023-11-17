@@ -1,20 +1,22 @@
 import rospy
 from geometry_msgs.msg import Pose
+from std_msgs.msg import String
 import numpy as np
 from srg import SRG
 import object_locator
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
+
 class OPS:
     def __init__(self):
-        rospy.Subscriber("simple_map", list,
-                        self.simple_map_callback)  # [[(5,-5),(5,-4),(5,-3),(5,-3),(5,-2),(5,-1),(5,0),(5,1),(5,2),(5,3),(5,4),(5,5)], [(4,-5), ....]
+        rospy.Subscriber("simple_map", String,
+                         self.simple_map_callback)  # [[(5,-5),(5,-4),(5,-3),(5,-3),(5,-2),(5,-1),(5,0),(5,1),(5,2),(5,3),(5,4),(5,5)], [(4,-5), ....]
         rospy.Subscriber("estimated_pose", Pose, self.estimated_pose_callback)  # (0,0)
-        rospy.Subscriber("known_objects", dict, self.known_objects_callback)  # [("name", (x,y)),("name", (x,y))]
-        rospy.Subscriber("target_object", str, self.target_object_callback)  # name
+        rospy.Subscriber("known_objects", String, self.known_objects_callback)  # [("name", (x,y)),("name", (x,y))]
+        rospy.Subscriber("target_object", String, self.target_object_callback)  # name
 
-        self.goal_pos_pub = rospy.publisher("goal_position", str)
+        self.goal_pos_pub = rospy.Publisher("goal_position", String, queue_size=10)
 
         # SRG
         self.srg = SRG()  # TODO
@@ -55,9 +57,7 @@ class OPS:
 
     def calculate_long_term_goal(self):
         if not self._validate_subbed_vars():
-           return
-
-        self.goal_pos_pub.publish("valid!")
+            return
 
         # known_objects = self.known_objects
         known_objects = [("oven", (-50, -50)), ("sofa", (70, 100)), ("kettle", (-150, 150))]
@@ -86,11 +86,17 @@ class OPS:
         #
         # ax.scatter(x, y, c=z, cmap='cool', marker='.')
         #
-        # max_prob = max(z)
-        # max_prob_index = z.index(max_prob)
+        # for name, (x,y) in known_objects:
+        #     col = np.random.random(3,)
+        #     ax.plot(x,y,color=col,marker='x', label=name)
+        #     circle = patches.Circle((x,y), radius=srg.get_distance(name,target_object), facecolor='none', edgecolor=col)
+        #     ax.add_patch(circle)
         #
+        # ax.legend()
+        # ax.axis('equal')
+        # ax.set_xlim(-250,250)
+        # ax.set_ylim(-250,250)
         # fig.savefig("thing.png")
-
         return res
 
     def _validate_subbed_vars(self):
@@ -99,6 +105,6 @@ class OPS:
 
 # debugging - not for main use
 if __name__ == '__main__':
+    rospy.init_node("ops")
     ops_locator = OPS()
-    res = ops_locator.calculate_long_term_goal()
-
+    rospy.spin()
