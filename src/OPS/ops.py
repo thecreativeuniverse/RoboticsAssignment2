@@ -52,6 +52,15 @@ class OPS:
         if not self._validate_subbed_vars():
             return
 
+        known_objects = self.known_objects
+        simple_map = self.simple_map
+        srg = self.srg
+        target_object = self.target_object
+
+        # TODO Manipulate the data to calculate probability
+        for objects in srg:
+            print(objects)
+        
 
     def _validate_subbed_vars(self):
         return self.target_object is not None and self.estimated_pose is not None and self.known_objects is not None and self.simple_map is not None
