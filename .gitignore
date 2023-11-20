@@ -2,3 +2,4 @@
 /devel/
 .idea/
 src/ros_x_habitat/
+*/__pycache__/
