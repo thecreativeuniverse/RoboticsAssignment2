@@ -1,6 +1,7 @@
 import random
 import turtle
 import copy
+from pgmGenerator import pgm
 
 # bedroom
 # ensuite
@@ -70,7 +71,6 @@ class Corner:
 
     def getOccupied(self):
         return self.occupied
-
 
 def drawBox(corners, name):
     t.penup()
@@ -188,7 +188,6 @@ else:
         rooms.append("dining room")
 if bedrooms > 2:
     rooms.append("corridor")
-print(rooms)
 
 for i in range(len(rooms)):
     if rooms[i] == "bedroom":
@@ -199,14 +198,14 @@ for i in range(len(rooms)):
 
     elif rooms[i] == "ensuite":
         connections = ["bedroom"]
-        size = [3, 5]
-        constraint = [1, 2]
+        size = [6, 7]
+        constraint = [2, 3]
         weight = 0
 
     elif rooms[i] == "bathroom":
         connections = ["corridor", "kitchen", "living room", "main living space", "dining room"]
-        size = [4, 7]
-        constraint = [2, 3]
+        size = [6, 8]
+        constraint = [3, 4]
         weight = 1
 
     elif rooms[i] == "main living space":
@@ -241,14 +240,12 @@ for i in range(len(rooms)):
     else:
         connections = ["main living space", "living room", "kitchen", "dining room"]
         size = [4, 10]
-        constraint = [1, 2]
+        constraint = [2, 3]
         weight = 4
 
     roomObj = Room(rooms[i], connections, size, constraint, weight)
     rooms[i] = roomObj
 
-for room in rooms:
-    print(vars(room))
 
 t = turtle.Turtle()
 t.hideturtle()
@@ -267,7 +264,7 @@ currentRoom = rooms[current]
 # place new room and update/delete/generate new coordinates
 # repeat until all rooms are placed or no solution is found (restart)
 
-upperLeftCoord = [10, 10]
+upperLeftCoord = [0, 0]
 upperRightCoord = [upperLeftCoord[0] + currentRoom.length, upperLeftCoord[1]]
 lowerRightCoord = [upperLeftCoord[0] + currentRoom.length, upperLeftCoord[1] - currentRoom.width]
 lowerLeftCoord = [upperLeftCoord[0], upperLeftCoord[1] - currentRoom.width]
@@ -282,6 +279,8 @@ cloneRoom = currentRoom
 placedRooms = [currentRoom]
 
 del rooms[current]
+
+doors =[]
 
 weightedRooms = []
 for _ in range(len(rooms)):
@@ -313,7 +312,6 @@ while len(weightedRooms) > 0:
                 locationToPlace = locationToPlace[0]
         except:
             pass
-        print(placedRooms[locationToPlace].type)
         cornerToPlace = random.choice(placedRooms[locationToPlace].corners)
 
 
@@ -335,7 +333,6 @@ while len(weightedRooms) > 0:
             failure += 1
 
     if len(available) == 0:
-        print("no solution found")
         break
 
     elif len(available) == 1:
@@ -346,41 +343,49 @@ while len(weightedRooms) > 0:
     # 0 = upperRight, 1 = lowerRight, 2 = lowerLeft 3 = upperLeft
     cornerIndex = placedRooms[locationToPlace].corners.index(cornerToPlace)
 
-    print("***")
-    print(placedRooms[locationToPlace].corners[cornerIndex].coords)
-    backup = placedRooms[locationToPlace].corners[cornerIndex].coords
+
     backup = copy.deepcopy(placedRooms[locationToPlace].corners[cornerIndex].coords)
-    print("BACKUP1 ", backup)
-    print(cornerIndex)
+
     upperLeftCoord = cornerToPlace.coords
 
-    print(currentRoom.length)
-    print(currentRoom.width)
 
     if cornerIndex == 0:
         if desiredDirection == 3:
             upperLeftCoord[0] = upperLeftCoord[0] - currentRoom.length
             upperLeftCoord[1] = upperLeftCoord[1] + currentRoom.width
-
+            doors.append([backup[0]-1,backup[1]])
+        else:
+            doors.append([backup[0], backup[1]-1])
     elif cornerIndex == 1:
-        if desiredDirection == 1:
+        if desiredDirection == 2:
             upperLeftCoord[0] = upperLeftCoord[0] - currentRoom.length
+            doors.append([backup[0]-1,backup[1]])
+
         else:
             upperLeftCoord[1] = upperLeftCoord[1] + currentRoom.width
+            doors.append([backup[0],backup[1]+1])
+
     elif cornerIndex == 2:
         if desiredDirection == 1:
             upperLeftCoord[0] = upperLeftCoord[0] - currentRoom.length
             upperLeftCoord[1] = upperLeftCoord[1] + currentRoom.width
+            doors.append([backup[0],backup[1]+1])
+
+        else:
+            doors.append([backup[0]+1,backup[1]])
 
     elif cornerIndex == 3:
         if desiredDirection == 0:
             upperLeftCoord[1] = upperLeftCoord[1] + currentRoom.width
+            doors.append([backup[0]+1, backup[1]])
         else:
             upperLeftCoord[0] = upperLeftCoord[0] - currentRoom.length
+            doors.append([backup[0], backup[1]-1])
 
-    print("BACKUP2 ", backup)
-
-    print(placedRooms[locationToPlace].corners[cornerIndex].coords)
+    try:
+        print("MADE DOOR AT ",doors[-1])
+    except:
+        print("no doors made yet")
     placedRooms[locationToPlace].corners[cornerIndex].coords = backup
 
     upperRightCoord = [upperLeftCoord[0] + currentRoom.length, upperLeftCoord[1]]
@@ -434,9 +439,6 @@ while len(weightedRooms) > 0:
     del weightedRooms[index]
 
 
-print("done")
-print("updating room:",cloneRoom.type)
-print(len(cloneRoom.corners))
 placedRooms[0] = cloneRoom
 
 t.pencolor("red")
@@ -460,15 +462,53 @@ if len(weightedRooms) == 0:
             useless,a2,b2,p2,q2 = generateRoomEquationData(placedRooms[j])
             if i != j:
                  if checkOverlap(corners,a1,b1,p1,q1,a2,b2,p2,q2):
-                     print("found failure between: ",placedRooms[i].type," and ",placedRooms[j].type)
                      failure = True
-                 else:
-                     print("failure not found between:",placedRooms[i].type," and ",placedRooms[j].type)
 
 
     print(failure)
-else:
-    print(weightedRooms)
+
+newMap = pgm()
+
+smallestX = 1000
+smallestY = 1000
+largestX =0
+largestY =0
+
+for room in placedRooms:
+    for corner in room.corners:
+        if corner.coords[0] > largestX:
+            largestX = corner.coords[0]
+        elif corner.coords[0] < smallestX:
+            smallestX = corner.coords[0]
+        if corner.coords[1] > largestY:
+            largestY = corner.coords[1]
+        elif corner.coords[1] < smallestY:
+            smallestY = corner.coords[1]
+
+averageX = round((smallestX+largestX)/2)
+averageY = round((smallestY+largestY)/2)
+
+offsetX = 250+averageX*-20
+
+offsetY = 250+averageY*-20
+
+for room in placedRooms:
+    topLeft = room.corners[3].coords
+    bottomRight =room.corners[1].coords
+    xRange = [round(topLeft[0]*20)+offsetX,round(bottomRight[0]*20)+offsetX]
+    yRange = [round(bottomRight[1]*20)+offsetY,round(topLeft[1]*20)+offsetY]
+
+    newMap.addRoom(xRange,yRange)
+
+print(len(doors))
+for door in doors:
+    print(door)
+    newMap.addDoor([round(door[0]*20)+offsetX,round(door[1]*20)+offsetY])
+
+
+print(averageX,averageY)
+
+newMap.generatePGM()
 
 
 turtle.mainloop()

@@ -1,40 +1,56 @@
 import numpy as np
-import random
+class pgm:
+    def __init__(self):
+        self.width = 500
+        self.height = 500
+        self.p_num = self.width * self.height
+        self.arr = np.full(self.p_num,205)
+    def addRoom(self,xRange,yRange):
 
-#empty = 205
-#movable space =254
-#wall =0
+        for y in range(self.height):
+            for x in range(self.width):
+                if xRange[0] < x < xRange[1]:
+                    if yRange[0] < y <yRange[1]:
+                        self.arr[(y*self.width)+x] = 254
 
+                if x ==xRange[0] or x == xRange[1]:
+                    if yRange[0] <= y <=yRange[1]:
+                        self.arr[(y * self.width) + x] = 1
+                if y ==yRange[0] or y == yRange[1]:
+                    if xRange[0] <= x <= xRange[1]:
+                        self.arr[(y * self.width) + x] = 1
 
+    def addDoor(self,coords):
+        xRange = [coords[0]-10,coords[0]+10]
+        yRange = [coords[1] - 10, coords[1] + 10]
+        for y in range(self.height):
+            for x in range(self.width):
+                if xRange[0] < x < xRange[1]:
+                    if yRange[0] < y < yRange[1]:
+                        self.arr[(y * self.width) + x] = 254
+    def generatePGM(self):
+        # open file for writing
+        filename = 'test.pgm'
+        fout=open(filename, 'wb')
 
-# define the width  (columns) and height (rows) of your image
-width = 600
-height = 600
+        # define PGM Header
+        pgmHeader = 'P5' + ' ' + str(self.width) + ' ' + str(self.height) + ' ' + str(255) +  '\n'
 
-p_num = width * height
-arr = np.random.randint(0,255,p_num)
+        pgmHeader_byte = bytearray(pgmHeader,'utf-8')
 
-for i in range(len(arr)):
-    arr[i] = [205,254,0][i%3]
+        # write the header to the file
+        fout.write(pgmHeader_byte)
 
-# open file for writing
-filename = 'test.pgm'
-fout=open(filename, 'wb')
+        # write the data to the file
+        img = np.reshape(self.arr,(self.height,self.width))
 
-# define PGM Header
-pgmHeader = 'P5' + ' ' + str(width) + ' ' + str(height) + ' ' + str(255) +  '\n'
+        for j in range(self.height):
+            bnd = list(img[j,:])
+            fout.write(bytearray(bnd)) # for 8-bit data only
 
-pgmHeader_byte = bytearray(pgmHeader,'utf-8')
+        fout.close()
 
-# write the header to the file
-fout.write(pgmHeader_byte)
-
-# write the data to the file
-img = np.reshape(arr,(height,width))
-
-for j in range(height):
-    bnd = list(img[j,:])
-    fout.write(bytearray(bnd)) # for 8-bit data only
-
-
-fout.close()
+test = pgm()
+test.addRoom([120,150],[200,220])
+test.addDoor([135,200])
+test.generatePGM()
