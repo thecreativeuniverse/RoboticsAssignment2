@@ -1,4 +1,7 @@
+import uuid
+
 import numpy as np
+import os
 class pgm:
     def __init__(self):
         self.width = 500
@@ -30,8 +33,10 @@ class pgm:
                         self.arr[(y * self.width) + x] = 254
     def generatePGM(self):
         # open file for writing
+        output_dir = os.path.join(os.path.dirname(__file__), "out")
+        os.makedirs(output_dir, exist_ok=True)
         filename = 'test.pgm'
-        fout=open(filename, 'wb')
+        fout=open(os.path.join(output_dir, filename), 'wb')
 
         # define PGM Header
         pgmHeader = 'P5' + ' ' + str(self.width) + ' ' + str(self.height) + ' ' + str(255) +  '\n'

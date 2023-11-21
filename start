@@ -1,0 +1,6 @@
+#!/bin/bash
+
+python src/mapping/roomGenerator.py
+
+roslaunch main stage.launch
+

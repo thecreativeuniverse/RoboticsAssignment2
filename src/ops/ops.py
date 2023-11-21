@@ -1,5 +1,5 @@
+#!/usr/bin/env python
 import rospy
-from geometry_msgs.msg import Pose
 from std_msgs.msg import String
 import numpy as np
 from srg import SRG, TrainingSRG
