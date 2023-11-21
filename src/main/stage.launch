@@ -10,5 +10,9 @@
         <!-- How long in seconds between map updates -->
         <param name="map_update_interval" value="1" />
     </node>
+
     <node name="ops" pkg="ops" type="ops.py" />
+
+    <node name="wall_hugger_nav" pkg="wall_hugger" type="navigation2.py" />
+    <node name="wall_hugger_laser" pkg="wall_hugger" type="laserReader.py" />
 </launch>

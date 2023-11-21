@@ -15,10 +15,6 @@ def callback(msg):
 
     base_data = Twist()
 
-    print(lowest)
-    print(highest)
-    print(averages)
-
     if averages[4] < 2:
         base_data.linear.x = 1
     elif averages[4] > 1:
@@ -39,6 +35,8 @@ def callback(msg):
     else:
         base_data.linear.x = 0.1
         # print("wtf")
+
+    base_data.linear.x *= 1.5
     #    else:
     #        base_data.angular.z = -4
     #    base_data.linear.x = 0
@@ -47,8 +45,6 @@ def callback(msg):
     #    base_data.linear.x = 1
     #    pub.publish(base_data)
     # rospy.sleep(rospy.Duration(1, 0))
-
-    print("=========")
 
 
 def listener():
