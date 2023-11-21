@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # 1)begin by subscribing to both robot pos and laserscan
 # 2)use the combination to identify if an object is visible
