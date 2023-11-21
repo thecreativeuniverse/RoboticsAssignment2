@@ -35,7 +35,7 @@ class pgm:
         # open file for writing
         output_dir = os.path.join(os.path.dirname(__file__), "out")
         os.makedirs(output_dir, exist_ok=True)
-        filename = 'test.pgm'
+        filename = 'world.pgm'
         fout=open(os.path.join(output_dir, filename), 'wb')
 
         # define PGM Header
