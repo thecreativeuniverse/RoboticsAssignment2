@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from std_msgs.msg import String
+from nav_msgs.msg import OccupancyGrid
 import numpy as np
 from srg import SRG, TrainingSRG
 import object_locator
@@ -10,12 +11,12 @@ import matplotlib.patches as patches
 
 class OPS:
     def __init__(self):
-        rospy.Subscriber("simple_map", String,
+        rospy.Subscriber("map", OccupancyGrid,
                          self.simple_map_callback)  # [[(5,-5),(5,-4),(5,-3),(5,-3),(5,-2),(5,-1),(5,0),(5,1),(5,2),(5,3),(5,4),(5,5)], [(4,-5), ....]
         rospy.Subscriber("known_objects", String, self.known_objects_callback)  # [("name", (x,y)),("name", (x,y))]
         rospy.Subscriber("target_object", String, self.target_object_callback)  # name
 
-        self.goal_pos_pub = rospy.Publisher("goal_position", String, queue_size=10)
+        self.goal_pos_pub = rospy.Publisher("goal_position", String, queue_size=1)
 
         # SRG
         self.srg = TrainingSRG()  # TODO
@@ -34,18 +35,22 @@ class OPS:
         self.known_objects = None
         self.target_object = None
 
+        self.HAS_DONE_ONE = False
+
     def simple_map_callback(self, simple_map):
         self.simple_map = simple_map
         self.calculate_long_term_goal()
         return None
 
     def estimated_pose_callback(self, estimated_pose):
+        print("received") #debugging
         self.estimated_pose = estimated_pose
         self.calculate_long_term_goal()
         return None
 
     def known_objects_callback(self, known_objects):
-        self.known_objects = known_objects
+        self.goal_pos_pub.publish(String(str(type(known_objects.data))))
+        self.known_objects = eval(known_objects.data)
         self.calculate_long_term_goal()
         return None
 
@@ -58,23 +63,30 @@ class OPS:
         if not self._validate_subbed_vars():
             return
 
-        # known_objects = self.known_objects
-        known_objects = [("oven", (-50, -50)), ("sofa", (70, 100)), ("kettle", (-150, 150))]
+        data = np.array(self.simple_map.data)
+        self.goal_pos_pub.publish(String(f"len data {len(data)}"))
+        size = int(np.sqrt(len(data)))
+        data_2d = np.split(data, size)
+        self.goal_pos_pub.publish(String(f"shape new data {np.shape(data_2d)}"))
 
-        simple_map = self.simple_map
+        known_objects = self.known_objects
 
-        srg = self.srg
-        # target_object = self.target_object
-        target_object = "bed"
-        known_object_locations = []
+        self.goal_pos_pub.publish(String(str(known_objects)))
 
-        for obj in known_objects:
-            distance = srg.get_distance(obj[0], target_object)
-            known_object_locations.append((obj[1], distance, 50))
-
-        res = object_locator.calculate_likelihoods(simple_map, known_object_locations)
-
-        return res
+        # simple_map = self.simple_map
+        #
+        # srg = self.srg
+        # # target_object = self.target_object
+        # target_object = "bed"
+        # known_object_locations = []
+        #
+        # for obj in known_objects:
+        #     distance = srg.get_distance(obj[0], target_object)
+        #     known_object_locations.append((obj[1], distance, 50))
+        #
+        # res = object_locator.calculate_likelihoods(simple_map, known_object_locations)
+        #
+        # return res
 
     def train(self):
 
@@ -166,5 +178,6 @@ class OPS:
 
 # debugging - not for main use
 if __name__ == '__main__':
+    rospy.init_node('ops', anonymous=True)
     ops_locator = OPS()
-    ops_locator.train()
+    rospy.spin()
