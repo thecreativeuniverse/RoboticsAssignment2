@@ -16,9 +16,9 @@ def callback(msg):
     base_data = Twist()
 
     if averages[4] < 2:
-        base_data.linear.x = 1
+        base_data.linear.x = 2
     elif averages[4] > 1:
-        base_data.angular.z = 1
+        base_data.angular.z = 1.5
         base_data.linear.x = 0.3
         # print("too far from left wall")
     elif averages[4] < 0.8:
@@ -31,7 +31,7 @@ def callback(msg):
     if averages[2] <= 1:
         # print("avoiding wall in front of me")
         base_data.angular.z = -4
-        base_data.linear.x = 0
+        base_data.linear.x = -0.5
     else:
         base_data.linear.x = 0.1
         # print("wtf")
