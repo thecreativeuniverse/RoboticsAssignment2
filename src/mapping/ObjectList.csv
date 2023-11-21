@@ -1,0 +1,31 @@
+Item,bedroom,ensuite,bathroom,main living space,living room,kitchen diner combo,kitchen,dining room,corridor,isNextTo,isOnTopOf
+oven,0,0,0,1-1,0,1-1,1-1,0,0,wall,n
+sofa,0-1,0,0,1-2,1-2,0,0,0,0,n,n
+bed,1-1,0,0,0,0,0,0,0,0,wall,n
+table,0,0,0,0-1,0-1,1-1,0-1,1-1,0,n,n
+sink,0,1-1,1-2,0,0,1-2,1-2,0,0,wall,n
+shower,0,1-1,1-1,0,0,0,0,0,0,wall,n
+coffee table,0-1,0,0,0-1,0-1,0,0,0,0-1,n,n
+washing machine,0,0-1,0-1,0,0,0-1,0-1,0,0,wall,n
+tumble dryer,0,0-1,0-1,0,0,0-1,0-1,0,0,wall,n
+kitchen cabinet,0,0,0,0,0,2-5,2-5,0,0,wall,n
+shelf,0-2,0-1,0-1,0-2,0-2,1-2,1-2,0-1,0,wall,n
+bedside table,1-2,0,0,0,0,0,0,0,0,bed,n
+desk,0-1,0,0,0-1,0-1,0,0,0,0,n,n
+television,0-1,0,0,0-1,0-1,0,0,0-1,0,wall,n
+dishwasher,0,0,0,0,0,0-1,0-1,0,0,wall,n
+bath,0,0-1,0-1,0,0,0,0,0,0,wall,n
+wardrobe,1-1,0,0,0-1,0,0,0,0,0,wall,n
+fridge,0-1,0,0,0-1,0,1-2,1-2,0,0,wall,n
+freezer,0,0,0,0-1,0,1-2,1-2,0,0,wall,n
+mirror,1-2,0-1,0-1,0,0-1,0,0,0,0-2,wall,n
+coat stand,0-1,0,0,0,0,0,0,0,1-1,n,n
+toilet,0,1-1,1-1,0,0,0,0,0,0,wall,n
+chair,0-1,0,0,2-5,0,2-6,0,2-6,0-1,"table, desk",n
+cushion,2-5,0,0,1-5,1-5,0,0,0,0,n,"sofa,bed,chair"
+toaster,0,0,0,0,0,1-2,1-2,0,0,n,"counter,table"
+kettle,0-1,0,0,0,0,1-2,1-2,0,0,n,"counter,table,coffee table"
+lamp,1-2,0,0,0,0,0,0,0,0,n,"table,bedside table,coffee table"
+microwave,0,0,0,0,0,1-1,1-1,0,0,n,"counter,table"
+computer,0-1,0,0,0-1,0-1,0,0,0,0,n,desk
+plant,0-3,0,0,1-3,1-3,0,0,0-2,1-4,n,"table,bedside table,coffee table,desk"

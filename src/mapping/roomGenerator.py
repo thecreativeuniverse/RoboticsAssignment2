@@ -2,6 +2,8 @@ import random
 import turtle
 import copy
 from pgmGenerator import pgm
+from objectGenerator import ItemGenerator
+
 
 # bedroom
 # ensuite
@@ -72,6 +74,7 @@ class Corner:
     def getOccupied(self):
         return self.occupied
 
+
 def drawBox(corners, name):
     t.penup()
     t.setposition(corners[0][0] * 20, corners[0][1] * 20)
@@ -94,8 +97,7 @@ def getHighestWeightedRoom(rooms):
         if rooms[i].getWeight() > biggest:
             biggest = rooms[i].getWeight()
             current = i
-    print("the highest weighted room is:")
-    print(vars(rooms[current]))
+
     return current
 
 
@@ -107,8 +109,7 @@ def equation(x, y, a1, b1, p1, q1, a2, b2, p2, q2):
               (abs((x - a1) / p1) + ((y - b1) / q1) + abs((x - a1) / p1) - ((y - b1) / q1) - 1))
 
     if value1 < 0 == value2:
-        print(value1)
-        print(value2)
+
         return True
     else:
         return False
@@ -117,17 +118,16 @@ def equation(x, y, a1, b1, p1, q1, a2, b2, p2, q2):
 def checkOverlap(corners, a1, b1, p1, q1, a2, b2, p2, q2):
     variance = 0.000
     overlap = False
-    offsets = [[-variance,-variance],[-variance,variance],[variance,variance],[variance,-variance]]
+    offsets = [[-variance, -variance], [-variance, variance], [variance, variance], [variance, -variance]]
     for i in range(len(corners)):
 
         value = equation(corners[i][0] + offsets[i][0], corners[i][1] + offsets[i][1], a1, b1, p1, q1, a2, b2, p2, q2)
         if value:
             overlap = True
         if overlap:
-            print(a1, b1, p1, q1, a2, b2, p2, q2)
             t.pencolor("blue")
             t.penup()
-            t.setposition(corners[i][0]*20,corners[i][1]*20)
+            t.setposition(corners[i][0] * 20, corners[i][1] * 20)
             t.pendown()
             t.pensize(5)
             t.forward(1)
@@ -246,7 +246,6 @@ for i in range(len(rooms)):
     roomObj = Room(rooms[i], connections, size, constraint, weight)
     rooms[i] = roomObj
 
-
 t = turtle.Turtle()
 t.hideturtle()
 t.speed(0)
@@ -254,7 +253,6 @@ for _ in range(4):
     t.forward(1000)
     t.backward(1000)
     t.left(90)
-
 # BOOM that's a lot of rooms, but we still need to connect them together
 
 current = getHighestWeightedRoom(rooms)
@@ -280,7 +278,7 @@ placedRooms = [currentRoom]
 
 del rooms[current]
 
-doors =[]
+doors = []
 
 weightedRooms = []
 for _ in range(len(rooms)):
@@ -314,7 +312,6 @@ while len(weightedRooms) > 0:
             pass
         cornerToPlace = random.choice(placedRooms[locationToPlace].corners)
 
-
         # pick a direction
         available = []
         for i in range(len(cornerToPlace.occupied)):
@@ -343,49 +340,43 @@ while len(weightedRooms) > 0:
     # 0 = upperRight, 1 = lowerRight, 2 = lowerLeft 3 = upperLeft
     cornerIndex = placedRooms[locationToPlace].corners.index(cornerToPlace)
 
-
     backup = copy.deepcopy(placedRooms[locationToPlace].corners[cornerIndex].coords)
 
     upperLeftCoord = cornerToPlace.coords
-
 
     if cornerIndex == 0:
         if desiredDirection == 3:
             upperLeftCoord[0] = upperLeftCoord[0] - currentRoom.length
             upperLeftCoord[1] = upperLeftCoord[1] + currentRoom.width
-            doors.append([backup[0]-1,backup[1]])
+            doors.append([backup[0] - 1, backup[1]])
         else:
-            doors.append([backup[0], backup[1]-1])
+            doors.append([backup[0], backup[1] - 1])
     elif cornerIndex == 1:
         if desiredDirection == 2:
             upperLeftCoord[0] = upperLeftCoord[0] - currentRoom.length
-            doors.append([backup[0]-1,backup[1]])
+            doors.append([backup[0] - 1, backup[1]])
 
         else:
             upperLeftCoord[1] = upperLeftCoord[1] + currentRoom.width
-            doors.append([backup[0],backup[1]+1])
+            doors.append([backup[0], backup[1] + 1])
 
     elif cornerIndex == 2:
         if desiredDirection == 1:
             upperLeftCoord[0] = upperLeftCoord[0] - currentRoom.length
             upperLeftCoord[1] = upperLeftCoord[1] + currentRoom.width
-            doors.append([backup[0],backup[1]+1])
+            doors.append([backup[0], backup[1] + 1])
 
         else:
-            doors.append([backup[0]+1,backup[1]])
+            doors.append([backup[0] + 1, backup[1]])
 
     elif cornerIndex == 3:
         if desiredDirection == 0:
             upperLeftCoord[1] = upperLeftCoord[1] + currentRoom.width
-            doors.append([backup[0]+1, backup[1]])
+            doors.append([backup[0] + 1, backup[1]])
         else:
             upperLeftCoord[0] = upperLeftCoord[0] - currentRoom.length
-            doors.append([backup[0], backup[1]-1])
+            doors.append([backup[0], backup[1] - 1])
 
-    try:
-        print("MADE DOOR AT ",doors[-1])
-    except:
-        print("no doors made yet")
     placedRooms[locationToPlace].corners[cornerIndex].coords = backup
 
     upperRightCoord = [upperLeftCoord[0] + currentRoom.length, upperLeftCoord[1]]
@@ -438,7 +429,6 @@ while len(weightedRooms) > 0:
     placedRooms.append(currentRoom)
     del weightedRooms[index]
 
-
 placedRooms[0] = cloneRoom
 
 t.pencolor("red")
@@ -449,7 +439,6 @@ for room in placedRooms:
     lowerLeftCoord = room.corners[2].coords
     drawBox([upperRightCoord, lowerRightCoord, lowerLeftCoord, upperLeftCoord], room.type)
 
-
 if len(weightedRooms) == 0:
     # ok so theoretically this should only happen if it actually placed all the rooms,
     # but we still need to check that none of the rooms overlap
@@ -457,13 +446,12 @@ if len(weightedRooms) == 0:
     # so we check no rooms overlap next
     failure = False
     for i in range(len(placedRooms)):
-        corners,a1,b1,p1,q1 = generateRoomEquationData(placedRooms[i])
+        corners, a1, b1, p1, q1 = generateRoomEquationData(placedRooms[i])
         for j in range(len(placedRooms)):
-            useless,a2,b2,p2,q2 = generateRoomEquationData(placedRooms[j])
+            useless, a2, b2, p2, q2 = generateRoomEquationData(placedRooms[j])
             if i != j:
-                 if checkOverlap(corners,a1,b1,p1,q1,a2,b2,p2,q2):
-                     failure = True
-
+                if checkOverlap(corners, a1, b1, p1, q1, a2, b2, p2, q2):
+                    failure = True
 
     print(failure)
 
@@ -471,8 +459,8 @@ newMap = pgm()
 
 smallestX = 1000
 smallestY = 1000
-largestX =0
-largestY =0
+largestX = 0
+largestY = 0
 
 for room in placedRooms:
     for corner in room.corners:
@@ -485,30 +473,52 @@ for room in placedRooms:
         elif corner.coords[1] < smallestY:
             smallestY = corner.coords[1]
 
-averageX = round((smallestX+largestX)/2)
-averageY = round((smallestY+largestY)/2)
+averageX = round((smallestX + largestX) / 2)
+averageY = round((smallestY + largestY) / 2)
 
-offsetX = 250+averageX*-20
+offsetX = 250 + averageX * -20
 
-offsetY = 250+averageY*-20
+offsetY = 250 + averageY * -20
 
 for room in placedRooms:
     topLeft = room.corners[3].coords
-    bottomRight =room.corners[1].coords
-    xRange = [round(topLeft[0]*20)+offsetX,round(bottomRight[0]*20)+offsetX]
-    yRange = [round(bottomRight[1]*20)+offsetY,round(topLeft[1]*20)+offsetY]
+    bottomRight = room.corners[1].coords
+    xRange = [round(topLeft[0] * 20) + offsetX, round(bottomRight[0] * 20) + offsetX]
+    yRange = [round(bottomRight[1] * 20) + offsetY, round(topLeft[1] * 20) + offsetY]
 
-    newMap.addRoom(xRange,yRange)
+    newMap.addRoom(xRange, yRange)
 
-print(len(doors))
+#print(len(doors))
 for door in doors:
-    print(door)
-    newMap.addDoor([round(door[0]*20)+offsetX,round(door[1]*20)+offsetY])
+    #print(door)
+    newMap.addDoor([round(door[0] * 20) + offsetX, round(door[1] * 20) + offsetY])
+
+#print(averageX, averageY)
+
+# make some objects idk
+print(random.randint(0,0))
+print(placedRooms)
+objList = ItemGenerator()
+objList.generateObjects(placedRooms)
+allItems = copy.deepcopy(objList.allItems)
+t.pensize(1)
+t.pencolor("black")
+for i in range(len(allItems)):
+    t.penup()
+    t.setposition(allItems[i][1]*20,allItems[i][2]*20)
+    t.pendown()
+    t.forward(1)
+    allItems[i] = (allItems[i][0],(round(allItems[i][1] * 20) + offsetX),(round(allItems[i][2] * 20) + offsetY))
+
+objList.allItems = allItems
+objList.saveToFile()
 
 
-print(averageX,averageY)
+# do some rotating to bud!
+
+
+# make image noisy
 
 newMap.generatePGM()
-
 
 turtle.mainloop()
