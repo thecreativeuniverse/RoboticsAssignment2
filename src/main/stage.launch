@@ -1,14 +1,14 @@
 <launch>
-    <param name="/use_sim_time" value="true"/>
+    <param name="/use_sim_time" value="true" />
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find socspioneer)/config/demo.rviz"/>
-    <node name="stage" pkg="stage_ros" type="stageros" args="--clock $(find mapping)/out/meeting.world"/>
+    <node name="stage" pkg="stage_ros" type="stageros"
+        args="--clock $(find mapping)/out/world.world" />
 
-<!--     <node name="wall_hugger_laserReader" pkg="wall_hugger" type="laserReader.py"/> -->
-<!--     <node name="wall_hugger_nav" pkg="wall_hugger" type="navigation2.py"/> -->
-    <node name="ops" pkg="ops" type="ops.py"/>
-
-<!--     <node name="slam" pkg="gmapping" type="slam_gmapping" args="scan:=base_scan"> -->
-        <!-- To receive less warnings but get less publications. See: http://wiki.ros.org/gmapping-->
-<!--         <param name="transform_publish_period" value="0.08"/> -->
-<!--     </node> -->
+    <!-- dynamic map generation -->
+    <node name="gmapping_node" pkg="gmapping" type="slam_gmapping" respawn="false">
+        <remap to="base_scan" from="scan" />
+        <!-- How long in seconds between map updates -->
+        <param name="map_update_interval" value="1" />
+    </node>
+    <node name="ops" pkg="ops" type="ops.py" />
 </launch>
