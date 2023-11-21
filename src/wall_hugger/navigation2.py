@@ -4,6 +4,8 @@ import random
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
 
+#test
+
 pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
 
 
