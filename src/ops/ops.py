@@ -18,8 +18,12 @@ class OPS:
 
         self.goal_pos_pub = rospy.Publisher("goal_position", String, queue_size=1)
 
+        self.estimated_pose = None
+        self.known_objects = None
+        self.target_object = None
+
         # SRG
-        self.srg = TrainingSRG()  # TODO
+        self.srg = SRG()  # TODO
         # {"thing":{"thing2":2, "thing3":5}, "thing2":{"thing":2,"thing3":10}, "thing3":{"thing":5,"thing2":10}}
 
         self.simple_map_radius = 250
@@ -30,10 +34,6 @@ class OPS:
         self.simple_map = np.array(list(zip(xs.ravel(), ys.ravel())), dtype='i4,i4').reshape(xs.shape)
 
         self.pdf_map = np.zeros([self.simple_map_radius * 2, self.simple_map_radius * 2])
-
-        self.estimated_pose = None
-        self.known_objects = None
-        self.target_object = None
 
         self.HAS_DONE_ONE = False
 
