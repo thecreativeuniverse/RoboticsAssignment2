@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import copy
+import os.path
 
 # 1)begin by subscribing to both robot pos and laserscan
 # 2)use the combination to identify if an object is visible
@@ -7,92 +9,87 @@
 # 5)publish it!
 # 6 )NO STRESS THIS TIME!!!!!!!!!!!!!!
 
+
+import math
 import rospy
 from sensor_msgs.msg import LaserScan
-from std_msgs.msg import Float64MultiArray
-import turtle
+from nav_msgs.msg import Odometry
+from std_msgs.msg import String
 
-pub = rospy.Publisher('/proximity_sensor', Float64MultiArray, queue_size=10)
+from tf.transformations import euler_from_quaternion
 
+class SVOD():
 
-def calculateColour(distance, max_distance):
-    if distance <= 0.2:
-        return "black"
-    elif distance <= 0.7:
-        return "red"
-    elif distance <= 2:
-        return "orange"
-    elif distance <= 4:
-        return "yellow"
-    elif distance < max_distance:
-        return "lime"
-    elif distance == max_distance:
-        return "green"
+    def __init__(self):
 
+        self.pub = rospy.Publisher('/known_objects', String, queue_size=1)
 
-def callback(msg):
-    # print("TOMISPOG")
+        self.current_location =(0,0,0)
 
-    turtle.speed(0)
-    turtle.tracer(0, 0)
-    turtle.pencolor("black")
-    for i in msg.ranges:
-        turtle.pencolor(calculateColour(i, msg.range_max))
-        turtle.forward(i * 75)
-        turtle.backward(i * 75)
-        turtle.left(180 / len(msg.ranges))
+        path = os.path.dirname(__file__)
+        path = os.path.join(path, "../mapping/out/itemList.txt")
+        file1 = open(path, 'r')
+        self.lines = file1.readlines()
 
-    turtle.penup()
-    turtle.setposition(-300, -50)
-    turtle.pendown()
-
-    lowest = min(msg.ranges)
-    lowest_location = msg.ranges.index(lowest)
-
-    highest = max(msg.ranges)
-    highest_location = msg.ranges.index(highest)
-
-    right = msg.ranges[:100]
-    right_avg = sum(right) / len(right)
-
-    middle_right = msg.ranges[100:200]
-    middle_right_avg = sum(middle_right) / len(middle_right)
-
-    middle = msg.ranges[200:300]
-    middle_avg = sum(middle) / len(middle)
-
-    middle_left = msg.ranges[300:400]
-    middle_left_avg = sum(middle_left) / len(middle_left)
-
-    left = msg.ranges[400:]
-    left_avg = sum(left) / len(left)
-
-    turtle.pencolor(calculateColour(lowest, msg.range_max))
-
-    turtle.write("TOMISPOG", font=("Verdana", 30, "normal"))
-
-    turtle.penup()
-    turtle.setposition(0, 0)
-    turtle.pendown()
-
-    turtle.update()
-    turtle.left(180)
-    turtle.clear()
-
-    stuff = Float64MultiArray()
-    stuff.data = [lowest, lowest_location, highest, highest_location, right_avg, middle_right_avg, middle_avg, middle_left_avg,
-                  left_avg]
-    pub.publish(stuff)
+        self.foundObjects =[]
 
 
-def listener():
-    rospy.init_node('proximity_sensor', anonymous=True)
-    rospy.Subscriber('base_scan', LaserScan, callback)
-    rospy.spin()
+    def bearing(self, a1,  a2,  b1,  b2):
+        RAD2DEG = 57.2957795130823209
+        if a1 == b1 and a2 == b2:
+            return 0
+        theta = math.atan2(b1 - a1, a2 - b2)
+        if theta < 0.0:
+            theta += math.pi*2
+        return RAD2DEG * theta
+
+    def odomCallback(self, msg):
+        scale =20
+        pos = [msg.pose.pose.position.x*20,msg.pose.pose.position.y*20]
+        rot = [msg.pose.pose.orientation.z,msg.pose.pose.orientation.w]
+        w = rot[1]
+        z = rot[0]
+        quat = (0,0,z,w)
+        euler = euler_from_quaternion(quat)
+        degrees = 360 -(270+(180*euler[2])/math.pi)%360
+        self.current_location =(pos[0], pos[1],degrees)
+
+    def lsCallback(self, msg):
+        fixedCurrentLocation = copy.deepcopy(self.current_location)
+        for item in self.lines:
+            data = item[1:-2]
+            data =data.split(",")
+            distance = math.sqrt((float(data[1])-fixedCurrentLocation[1])**2+(float(data[2])-fixedCurrentLocation[2])**2)
+            angle = 360+ self.bearing(float(data[1]),float(data[2]),fixedCurrentLocation[1],fixedCurrentLocation[2])
+            robotAngle = 360+ float(fixedCurrentLocation[2])
+            #print(distance)
+            if distance <100:
+                if angle>(robotAngle-90) and angle<(robotAngle)+90:
+                    lineIndex =((90-abs(robotAngle-angle))/180)*500
+                    if distance < 20*msg.ranges[round(lineIndex)]:
+                        exists =False
+                        for objectPosition in self.foundObjects:
+                            if objectPosition[1] == float(data[1]) and objectPosition[2] == float(data[2]):
+                                exists = True
+                            else:
+                                pass
+                        if not exists:
+                            self.foundObjects.append((data[0],float(data[1]),float(data[2])))
+        stuff = String(str(self.foundObjects))
+        self.pub.publish(stuff)
+
+
+    def listener(self,):
+        rospy.init_node('known_objects', anonymous=True)
+        rospy.Subscriber('/odom', Odometry, self.odomCallback)
+
+        rospy.Subscriber('base_scan', LaserScan, self.lsCallback)
+        rospy.spin()
 
 
 if __name__ == '__main__':
     try:
-        listener()
+        new = SVOD()
+        new.listener()
     except rospy.ROSInterruptException:
         pass
