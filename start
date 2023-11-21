@@ -1,6 +1,6 @@
 #!/bin/bash
 
+catkin_make
 python src/mapping/roomGenerator.py
-
 roslaunch main stage.launch
 
