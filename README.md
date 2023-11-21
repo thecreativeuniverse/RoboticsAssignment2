@@ -1,34 +1,29 @@
----
-title: Robotics Project format
----
+Robotics Assigmnment 2
+=====================
 
-![[\[fig:FloorPlan\]]{#fig:FloorPlan label="fig:FloorPlan"}A generated
-floorplan with rooms assigned.](Artboard 1.png){width="0.7\linewidth"}
-
-![[\[fig:ObjectMap\]]{#fig:ObjectMap label="fig:ObjectMap"}A generated
-floorplan objects placed in each
-room.](Artboard 2.png){width="0.7\linewidth"}
-
-![[\[fig:SimpleMap\]]{#fig:SimpleMap label="fig:SimpleMap"}A generated
-and colour coded SimpleMap. The map has been fully
-explored.](Screenshot 2023-11-10 173630.png){width="0.7\linewidth"}
 
 Map Generation
 ==============
+![FloorPlan](docs+images/floorplan.png)
+<p align="center">
+Figure 1
+</p>
+
+
+![ObjectMap](docs+images/objectmap.png)
+<p align="center">
+Figure 2
+</p>
 
 Use a variety of rectangles to construct a basic floor plan and assign
-each space a room designation. See Figure Figure
-[\[fig:FloorPlan\]](#fig:FloorPlan){reference-type="ref"
-reference="fig:FloorPlan"}.
+each space a room designation. See Figure 1
 
 Object Assignment
 =================
 
 Based on the designation of a specific room (i.e kitchen) assign object
 such that they are placed according to our desired spatial relational
-graph. See Figure Figure
-[\[fig:ObjectMap\]](#fig:ObjectMap){reference-type="ref"
-reference="fig:ObjectMap"}.
+graph. See Figure 2.
 
 Simultaneous Localisation And Mapping (SLAM)
 ============================================
@@ -55,20 +50,19 @@ Use SLAM as described in the lectures to explore the floor plan and
 identify the robot's position, returning an additional SimpleMap that is
 a grid representation of the explored floor plan.
 
+![ObjectMap](docs+images/simplemap.png)
+<p align="center">
+Figure 3
+</p>
+
+
 Using a 100m x 100m space with a resolution of $0.2m^2$ per grid we end
 up with an ndarray of size 500 x 500 to represent our simplified map
 using integers to represent the state of each square. 0 means the square
 is unknown, 1 means the square is explored but can be driven through and
-2 means that it is explored but a wall has been found. See Figure
-[\[fig:SimpleMap\]](#fig:SimpleMap){reference-type="ref"
-reference="fig:SimpleMap"} for a colour coded view of a SimpleMap.
+2 means that it is explored but a wall has been found. See Figure 3.
 
-![[\[fig:Relations\]]{#fig:Relations label="fig:Relations"}The spatial
-relations plotted on a map.](Artboard 3.png){width="0.7\linewidth"}
 
-![[\[fig:HeatMap\]]{#fig:HeatMap label="fig:HeatMap"}A 2d slice of the
-spatial relations used to form a heat
-map](Artboard 4.png){width="0.7\linewidth"}
 
 Object Position eStimation (OPS)
 ================================
@@ -87,16 +81,22 @@ Publishers
 
 -   location to travel to
 
+![ObjectMap](docs+images/relations.png)
+<p align="center">
+Figure 4
+</p>
+
 Using the generated spatial relational graph the OPS section will
 identify the next square the robot will travel to in an attempt to find
-the desired object. See figure
-[\[fig:Relations\]](#fig:Relations){reference-type="ref"
-reference="fig:Relations"} for how the objects spatial relations will be
-visualised.
+the desired object. See figure 4.
+
+![ObjectMap](docs+images/heatmap.png)
+<p align="center">
+Figure 5
+</p>
 
 All the modeled spatial relations will be used to form a 3d heat map
-(see figure [\[fig:HeatMap\]](#fig:HeatMap){reference-type="ref"
-reference="fig:HeatMap"} for where we estimate the desired object to be.
+(see figure 5 for where we estimate the desired object to be.
 Then provided that the square can be navigated to as the crow flies from
 an explored non wall square the square in question will be published.
 
