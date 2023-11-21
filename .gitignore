@@ -2,4 +2,7 @@
 /devel/
 .idea/
 src/ros_x_habitat/
-/__pycache__/
+__pycache__/
+*.pyc
+*.pyo
+src/mapping/out/*

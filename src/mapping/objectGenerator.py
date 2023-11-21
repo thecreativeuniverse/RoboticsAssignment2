@@ -1,6 +1,8 @@
 import copy
 import csv
+import os
 import random
+
 
 def roomExists(itemLocation, roomList):
     locations = []
@@ -35,7 +37,8 @@ class Item:
 
 class ItemGenerator:
     def __init__(self):
-        with open('ObjectList.csv') as csv_file:
+        current_file = os.path.dirname(__file__)
+        with open(os.path.join(current_file, 'ObjectList.csv')) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             line_count = 0
             data = []
@@ -81,7 +84,7 @@ class ItemGenerator:
                 if item.quantities[i][1] != 0:
 
                     roomIndexes = roomExists(item.rooms[i], roomList)
-                    data = [item.name,item.quantities[i], roomIndexes]
+                    data = [item.name, item.quantities[i], roomIndexes]
                     if len(roomIndexes) > 0 and roomIndexes != [0]:
                         self.itemRooms.append(data)
 
@@ -92,37 +95,40 @@ class ItemGenerator:
         # save all placed items into array per room
         # combine arrays
         # have list YAY
-        wallGap =0.3
-        self.allItems =[]
+        wallGap = 0.3
+        self.allItems = []
         for i in range(len(roomList)):
-            roomItems =[]
+            roomItems = []
             for potentialItem in self.itemRooms:
                 if i in potentialItem[2]:
-                    itemQuantity = random.randint(potentialItem[1][0],potentialItem[1][1])
+                    itemQuantity = random.randint(potentialItem[1][0], potentialItem[1][1])
                     topLeftCorner = copy.deepcopy(roomList[i].corners[3].coords)
                     bottomRightCorner = copy.deepcopy(roomList[i].corners[1].coords)
-                    topLeftCorner = [topLeftCorner[0]+wallGap,topLeftCorner[1]-wallGap]
-                    bottomRightCorner = [bottomRightCorner[0]-wallGap,bottomRightCorner[1]+wallGap]
+                    topLeftCorner = [topLeftCorner[0] + wallGap, topLeftCorner[1] - wallGap]
+                    bottomRightCorner = [bottomRightCorner[0] - wallGap, bottomRightCorner[1] + wallGap]
                     print(topLeftCorner)
                     print(bottomRightCorner)
                     for k in range(itemQuantity):
-                        xCoord = random.randint(round(topLeftCorner[0])*1000,round(bottomRightCorner[0])*1000)/1000
-                        yCoord = random.randint(round(bottomRightCorner[1])*1000,round(topLeftCorner[1])*1000)/1000
-                        roomItems.append((potentialItem[0],xCoord,yCoord))
-                        self.allItems.append((potentialItem[0],xCoord,yCoord))
+                        xCoord = random.randint(round(topLeftCorner[0]) * 1000,
+                                                round(bottomRightCorner[0]) * 1000) / 1000
+                        yCoord = random.randint(round(bottomRightCorner[1]) * 1000,
+                                                round(topLeftCorner[1]) * 1000) / 1000
+                        roomItems.append((potentialItem[0], xCoord, yCoord))
+                        self.allItems.append((potentialItem[0], xCoord, yCoord))
 
     def saveToFile(self):
-        f = open("itemList.txt", "a")
+        output_dir = os.path.join(os.path.dirname(__file__), "out")
+        os.makedirs(output_dir, exist_ok=True)
+        f = open(os.path.join(output_dir, "itemList.txt"), "a")
         f.truncate(0)
         for thing in self.allItems:
-            line ="("
+            line = "("
             for data in thing:
-                line = line+str(data)+","
-            line =line[:-1]
-            line =line+")"
+                line = line + str(data) + ","
+            line = line[:-1]
+            line = line + ")"
 
             f.writelines(line)
 
             f.writelines("\n")
         f.close()
-

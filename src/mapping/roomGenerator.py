@@ -521,4 +521,4 @@ objList.saveToFile()
 
 newMap.generatePGM()
 
-turtle.mainloop()
+# turtle.mainloop()
