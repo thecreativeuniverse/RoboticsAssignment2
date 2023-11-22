@@ -3,6 +3,7 @@ import turtle
 import copy
 from pgmGenerator import pgm
 from objectGenerator import ItemGenerator
+import os.path
 
 
 # bedroom
@@ -487,6 +488,23 @@ for room in placedRooms:
     yRange = [round(bottomRight[1] * 20) + offsetY, round(topLeft[1] * 20) + offsetY]
 
     newMap.addRoom(xRange, yRange)
+
+width = largestX -smallestX
+height = largestY-smallestY
+
+worldPath = os.path.dirname(__file__)
+worldPath = os.path.join(worldPath, "../mapping/out/world.world")
+
+text ="  size ["+str(width)+" "+str(height)+" 0.5]\n"
+
+lines = open(worldPath, 'r').readlines()
+lines[63] = text
+out = open(worldPath, 'w')
+out.writelines(lines)
+out.close()
+
+
+
 
 #print(len(doors))
 for door in doors:

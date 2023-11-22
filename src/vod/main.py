@@ -15,8 +15,12 @@ import rospy
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
+from sensor_msgs.msg import PointCloud
+from geometry_msgs.msg import Point32, Pose
+import std_msgs.msg
 
-from tf.transformations import euler_from_quaternion
+
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 
 class SVOD():
@@ -24,6 +28,8 @@ class SVOD():
     def __init__(self):
 
         self.pub = rospy.Publisher('/known_objects', String, queue_size=1)
+        self.bot = rospy.Publisher("/my_pointcloud_topic2", PointCloud, queue_size=1)
+
 
         self.current_location = (0, 0, 0)
 
@@ -34,48 +40,64 @@ class SVOD():
 
         self.foundObjects = []
 
-    def bearing(self, a1, a2, b1, b2):
+    def bearing(self, x1, y1, x2, y2):
         RAD2DEG = 57.2957795130823209
-        if a1 == b1 and a2 == b2:
+        if x1 == x2 and y1 == y2:
             return 0
-        theta = math.atan2(b1 - a1, a2 - b2)
-        if theta < 0.0:
-            theta += math.pi * 2
-        return RAD2DEG * theta
+        theta = math.atan2(x2 - x1, y2 - y1)
+        return 90-(RAD2DEG * theta)
 
     def odomCallback(self, msg):
         scale = 20
         pos = [msg.pose.pose.position.x * 20, msg.pose.pose.position.y * 20]
-        rot = [msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
-        w = rot[1]
-        z = rot[0]
-        quat = (0, 0, z, w)
+        quat = (0, 0, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
         euler = euler_from_quaternion(quat)
-        degrees = 360 - (270 + (180 * euler[2]) / math.pi) % 360
+        degrees = 360 - (270 + ((180 * euler[2]) / math.pi)) % 360
         self.current_location = (pos[0], pos[1], degrees)
 
     def lsCallback(self, msg):
-        fixedCurrentLocation = copy.deepcopy(self.current_location)
+        (current_x,current_y, current_theta) = copy.deepcopy(self.current_location)
         for item in self.lines:
-            data = item[1:-2]
-            data = data.split(",")
-            distance = math.sqrt(
-                (float(data[1]) - fixedCurrentLocation[1]) ** 2 + (float(data[2]) - fixedCurrentLocation[2]) ** 2)
-            angle = 360 + self.bearing(float(data[1]), float(data[2]), fixedCurrentLocation[1], fixedCurrentLocation[2])
-            robotAngle = 360 + float(fixedCurrentLocation[2])
+            (obj, x, y) = eval(item)
+            x -= 250
+            y -= 250
+            y*=-1
+            # data = item[1:-2]
+            # data = data.split(",")
+            # data[1] = float(data[1])-250
+            # data[2] = -1*(float(data[2])-250)
+            distance = math.sqrt((x - current_x) ** 2 + (y - current_y) ** 2)
+            angle = 360 + self.bearing(x, y, current_x, current_y)
+            robotAngle = 360 + current_theta
+            #print(f"OBJECT {obj} loc {x}, {y} robotPos {current_x}, {current_y}, dist {distance}") #debugging
             if distance < 100:
-                if angle > (robotAngle - 90) and angle < (robotAngle) + 90:
-                    lineIndex = ((90 - abs(robotAngle - angle)) / 180) * 500
-                    if distance < 20 * msg.ranges[round(lineIndex)]:
+                #print(f"dist<100 angle {angle} robotangle {robotAngle}") #debugging
+                if robotAngle - 90 < angle < robotAngle + 90:
+                    #print("within angle") #debugging
+                    lineIndex = (round(((90 - (angle % 360) - (robotAngle % 360)) / 180) * 500))
+                    #print(f"lineindex {lineIndex} thing dist {msg.ranges[lineIndex]}") #debugging
+                    if distance < 20 * msg.ranges[lineIndex]:
+                        #print("distance < 20*lineindec") #debugging
                         exists = False
                         for objectPosition in self.foundObjects:
-                            if objectPosition[1] == float(data[1]) and objectPosition[2] == float(data[2]):
+                            if objectPosition[1] == x and objectPosition[2] == y:
                                 exists = True
                             else:
                                 pass
                         if not exists:
-                            self.foundObjects.append((data[0], float(data[1]), float(data[2])))
+                            self.foundObjects.append((obj, x, y))
+            #print("=============================")
         stuff = String(str(self.foundObjects))
+
+        robotPos = PointCloud()
+        # filling pointcloud header
+        header = std_msgs.msg.Header()
+        header.stamp = rospy.Time.now()
+        header.frame_id = 'map'
+        robotPos.header = header
+        robotPos.points.append(Point32(current_x/20,current_y/20,0))
+        self.bot.publish(robotPos)
+
         self.pub.publish(stuff)
 
     def listener(self, ):

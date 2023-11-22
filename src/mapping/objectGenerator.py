@@ -121,10 +121,13 @@ class ItemGenerator:
         os.makedirs(output_dir, exist_ok=True)
         f = open(os.path.join(output_dir, "itemList.txt"), "a")
         f.truncate(0)
-        for thing in self.allItems:
+        for item in self.allItems:
             line = "("
-            for data in thing:
-                line = line + str(data) + ","
+            for i in range(len(item)):
+                if i ==0:
+                    line =line + '"'+str(item[i]) + '",'
+                else:
+                    line = line + str(item[i]) + ","
             line = line[:-1]
             line = line + ")"
 
