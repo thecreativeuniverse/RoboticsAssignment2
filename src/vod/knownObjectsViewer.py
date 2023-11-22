@@ -19,7 +19,7 @@ class KnownThings():
         my_awesome_pointcloud.header = header
 
         known_objects = eval(msg.data)
-        print(known_objects)
+        #print(known_objects)
         for obj, x,y in known_objects:
             my_awesome_pointcloud.points.append(Point32(x / 20, y / 20, 0.0))
 

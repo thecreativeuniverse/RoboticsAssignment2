@@ -62,10 +62,6 @@ class SVOD():
             x -= 250
             y -= 250
             y*=-1
-            # data = item[1:-2]
-            # data = data.split(",")
-            # data[1] = float(data[1])-250
-            # data[2] = -1*(float(data[2])-250)
             distance = math.sqrt((x - current_x) ** 2 + (y - current_y) ** 2)
             angle = 360 + self.bearing(x, y, current_x, current_y)
             robotAngle = 360 + current_theta
