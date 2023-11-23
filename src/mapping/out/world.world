@@ -61,7 +61,7 @@ floorplan
 (
   name "test"
   bitmap "world.pgm"
-  size [13.083366123897369 11.648674927560087 0.5]
+  size [16.042 9.97661654814313 0.5]
 )
 # throw in a robot
 pioneer( pose [ 0 0 0 0 ] name "robot" color "blue")

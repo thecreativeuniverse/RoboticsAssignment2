@@ -2,52 +2,12 @@ import copy
 from pgmGenerator import pgm
 from objectGenerator import ItemGenerator
 from roomGenerator import *
+from svgGenerator import PogTurtle
 import os.path
-from svg_turtle import SvgTurtle
-
-
-# bedroom
-# ensuite
-# bathroom
-# main living space
-# living room
-# kitchen diner combo
-# kitchen
-# dining room
-# corridor
-
-
-def drawBox(corners, name):
-    t.penup()
-    t.setposition(corners[0][0] * 20, corners[0][1] * -20)
-    t.pendown()
-    for corner_index in range(len(corners)):
-        t.setposition(corners[len(corners) - corner_index - 1][0] * 20,
-                      corners[len(corners) - corner_index - 1][1] * -20)
-
-    mid_x = round((corners[0][0] + corners[2][0]) / 2)
-    mid_y = round((corners[0][1] + corners[2][1]) / 2)
-    t.penup()
-    t.setposition(mid_x * 20, mid_y * -20)
-    t.pendown()
-    t.write(name, font=("Verdana", 5, "normal"), align="center")
 
 
 # generate turtle and make the map white
-t = SvgTurtle(1000, 1000)
-t.hideturtle()
-t.speed(0)
-t.color("white")
-t.setposition(-500, -500)
-t.begin_fill()
-for x in range(4):
-    t.forward(1000)
-    t.left(90)
-t.end_fill()
-t.setposition(-490, -490)
 
-t.pencolor("black")
-t.write("TOMISPOG", font=("Comic Sans MS", 20, "normal"), align="left")
 
 rooms = []
 
@@ -137,6 +97,7 @@ placedRooms = [currentRoom]
 
 del rooms[current]
 
+tortoise = PogTurtle()
 doors = []
 
 weightedRooms = []
@@ -290,9 +251,10 @@ while len(weightedRooms) > 0:
 
 placedRooms[0] = cloneRoom
 
-t.pencolor("red")
+tortoise.t.pencolor("red")
 for room in placedRooms:
-    drawBox([room.corners[0].coords, room.corners[1].coords, room.corners[2].coords, room.corners[3].coords], room.type)
+    tortoise.drawRoom([room.corners[0].coords, room.corners[1].coords,
+                       room.corners[2].coords, room.corners[3].coords], room.type)
 
 if len(weightedRooms) == 0:
     failure = False
@@ -301,13 +263,7 @@ if len(weightedRooms) == 0:
             if i != j:
                 if checkOverlap(placedRooms[i].corners, placedRooms[j].corners):
                     for corner in placedRooms[i].corners:
-                        t.pencolor("blue")
-                        t.penup()
-                        t.setposition(corner.coords[0] * 20, corner.coords[1] * -20)
-                        t.pendown()
-                        t.pensize(5)
-                        t.forward(1)
-                        t.pensize(1)
+                        tortoise.drawOverlap(corner)
                     failure = True
 
 newMap = pgm()
@@ -332,7 +288,6 @@ averageX = round((smallestX + largestX) / 2)
 averageY = round((smallestY + largestY) / 2)
 
 offsetX = 250 + averageX * -20
-
 offsetY = 250 + averageY * -20
 
 for room in placedRooms:
@@ -364,21 +319,11 @@ for door in doors:
 itemList = ItemGenerator()
 itemList.generateObjects(placedRooms)
 allItems = copy.deepcopy(itemList.allItems)
-t.pensize(1)
-t.pencolor("black")
-for i in range(len(allItems)):
-    t.penup()
-    t.setposition(allItems[i][1] * 20, allItems[i][2] * -20)
-    t.pendown()
-    t.forward(1)
-    allItems[i] = (allItems[i][0], (round(allItems[i][1] * 20) + offsetX), (round(allItems[i][2] * 20) + offsetY))
+tortoise.drawItems(allItems,offsetX,offsetY)
 
 itemList.allItems = allItems
 itemList.saveToFile()
 
 newMap.generatePGM()
 
-output_dir = os.path.join(os.path.dirname(__file__), "out")
-os.makedirs(output_dir, exist_ok=True)
-filename = output_dir + '/turtleMap.svg'
-t.save_as(filename)
+tortoise.saveSVG()
