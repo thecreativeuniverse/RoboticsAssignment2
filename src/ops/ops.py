@@ -35,43 +35,31 @@ class OPS:
 
         self.pdf_map = np.zeros([self.simple_map_radius * 2, self.simple_map_radius * 2])
 
-        self.HAS_DONE_ONE = False
-
     def simple_map_callback(self, simple_map):
         self.simple_map = simple_map
         self.calculate_long_term_goal()
-        return None
 
     def estimated_pose_callback(self, estimated_pose):
-        print("received") #debugging
         self.estimated_pose = estimated_pose
         self.calculate_long_term_goal()
-        return None
 
     def known_objects_callback(self, known_objects):
-        self.goal_pos_pub.publish(String(str(type(known_objects.data))))
         self.known_objects = eval(known_objects.data)
         self.calculate_long_term_goal()
-        return None
 
     def target_object_callback(self, target_object):
         self.target_object = target_object
         self.calculate_long_term_goal()
-        return None
 
     def calculate_long_term_goal(self):
         if not self._validate_subbed_vars():
             return
 
         data = np.array(self.simple_map.data)
-        self.goal_pos_pub.publish(String(f"len data {len(data)}"))
         size = int(np.sqrt(len(data)))
         data_2d = np.split(data, size)
-        self.goal_pos_pub.publish(String(f"shape new data {np.shape(data_2d)}"))
 
         known_objects = self.known_objects
-
-        self.goal_pos_pub.publish(String(str(known_objects)))
 
         # simple_map = self.simple_map
         #
