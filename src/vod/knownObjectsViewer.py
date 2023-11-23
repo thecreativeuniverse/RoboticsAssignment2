@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import rospy
 from sensor_msgs.msg import PointCloud
 import std_msgs.msg
