@@ -8,4 +8,5 @@ __pycache__/
 src/mapping/out/*.pgm
 src/mapping/out/*.txt
 src/mapping/out/*.svg
+src/mapping/out/*.world
 src/CMakeLists.txt
