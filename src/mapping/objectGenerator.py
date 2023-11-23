@@ -95,6 +95,7 @@ class ItemGenerator:
         # save all placed items into array per room
         # combine arrays
         # have list YAY
+
         wallGap = 0.3
         self.allItems = []
         for i in range(len(roomList)):
