@@ -8,77 +8,13 @@ import os.path
 
 tortoise = PogTurtle()
 
-rooms = []
+rooms, ensuite = generateInitialRooms()
+room_objects = generateRoomObjects(rooms)
 
-size = random.choice(["small", "medium", "large"])
 
-style = random.choice(["open plan", "not open plan"])
 
-if size == "small":
-    bedrooms = random.randint(1, 2)
-    ensuite = True
-elif size == "medium":
-    bedrooms = random.randint(2, 3)
-    ensuite = random.choice([True, False])
-else:
-    bedrooms = random.randint(4, 5)
-    ensuite = False
-
-if not ensuite:
-    bathrooms = random.randint(1, bedrooms - 1)
-else:
-    bathrooms = 0
-
-for _ in range(bedrooms):
-    rooms.append("bedroom")
-    if ensuite:
-        rooms.append("ensuite")
-
-for _ in range(bathrooms):
-    rooms.append("bathroom")
-
-if style == "open plan":
-    rooms.append("main living space")
-else:
-    rooms.append("living room")
-    if random.choice([True, False]):
-        rooms.append("kitchen diner combo")
-    else:
-        rooms.append("kitchen")
-        rooms.append("dining room")
-if bedrooms > 2:
-    rooms.append("corridor")
-
-for i in range(len(rooms)):
-    if rooms[i] == "bedroom":
-        rooms[i] = Room(rooms[i], ["corridor", "main living space", "living room"], [8, 20], [2, 6], 1)
-
-    elif rooms[i] == "ensuite":
-        rooms[i] = Room(rooms[i], ["bedroom"], [6, 7], [2, 3], 0)
-
-    elif rooms[i] == "bathroom":
-        rooms[i] = Room(rooms[i], ["corridor", "kitchen", "living room", "main living space"], [6, 8], [3, 4], 1)
-
-    elif rooms[i] == "main living space":
-        rooms[i] = Room(rooms[i], None, [35, 60], [5, 10], 5)
-
-    elif rooms[i] == "living room":
-        rooms[i] = Room(rooms[i], None, [14, 22], [3, 6], 5)
-
-    elif rooms[i] == "kitchen diner combo":
-        rooms[i] = Room(rooms[i], ["corridor", "living room"], [20, 30], [4, 7], 3)
-
-    elif rooms[i] == "kitchen":
-        rooms[i] = Room(rooms[i], ["living room", "dining room", "corridor"], [10, 20], [2, 4], 3)
-
-    elif rooms[i] == "dining room":
-        rooms[i] = Room(rooms[i], ["living room", "kitchen", "corridor"], [10, 20], [2, 4], 3)
-
-    else:
-        rooms[i] = Room(rooms[i], ["main living space", "living room", "kitchen", "dining room"], [4, 10], [2, 3], 4)
-
-current = getHighestWeightedRoom(rooms)
-currentRoom = rooms[current]
+current = getHighestWeightedRoom(room_objects)
+currentRoom = room_objects[current]
 
 upperLeftCoord = [0, 0]
 upperRightCoord = [upperLeftCoord[0] + currentRoom.length, upperLeftCoord[1]]
@@ -94,15 +30,15 @@ currentRoom.setCorners([upperRightCorner, lowerRightCorner, lowerLeftCorner, upp
 cloneRoom = currentRoom
 placedRooms = [currentRoom]
 
-del rooms[current]
+del room_objects[current]
 
 doors = []
 
 weightedRooms = []
-for _ in range(len(rooms)):
-    index = getHighestWeightedRoom(rooms)
-    weightedRooms.append((rooms[index]))
-    del rooms[index]
+for _ in range(len(room_objects)):
+    index = getHighestWeightedRoom(room_objects)
+    weightedRooms.append((room_objects[index]))
+    del room_objects[index]
 
 while len(weightedRooms) > 0:
     index = 0
@@ -223,10 +159,10 @@ while len(weightedRooms) > 0:
 
     #####################################
     # baseline coords generated, now they need to be modified such that they don't allow for incorrect rooms
-    placedRooms[locationToPlace].corners[cornerIndex].occupied[desiredDirection] = 2
     currentRoom.setCorners([upperRightCorner, lowerRightCorner, lowerLeftCorner, upperLeftCorner])
 
     placedRooms[locationToPlace].corners[cornerIndex].occupied[desiredDirection] = 2
+    placedRooms[locationToPlace].corners[desiredDirection].occupied[cornerIndex] = 2
 
     # preventing bedrooms from having 2 ensuites
     if currentRoom.type == "ensuite":
@@ -253,15 +189,15 @@ for room in placedRooms:
     tortoise.drawRoom([room.corners[0].coords, room.corners[1].coords,
                        room.corners[2].coords, room.corners[3].coords], room.type)
 
-if len(weightedRooms) == 0:
-    failure = False
-    for i in range(len(placedRooms)):
-        for j in range(len(placedRooms)):
-            if i != j:
-                if checkOverlap(placedRooms[i].corners, placedRooms[j].corners):
-                    for corner in placedRooms[i].corners:
-                        tortoise.drawOverlap(corner)
-                    failure = True
+
+failure = False
+for i in range(len(placedRooms)):
+    for j in range(len(placedRooms)):
+        if i != j:
+            print("checking: ",placedRooms[i].type," against room: ",placedRooms[j].type)
+            if checkOverlap(tortoise,placedRooms[i].corners, placedRooms[j].corners):
+
+                failure = True
 
 newMap = PGM()
 

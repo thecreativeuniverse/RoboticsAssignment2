@@ -7,6 +7,10 @@ class PogTurtle:
         self.t = SvgTurtle(1000, 1000)
         self.t.hideturtle()
         self.t.speed(0)
+        self.t.pencolor("pink")
+        for _ in range(4):
+            self.t.forward(500)
+            self.t.left(90)
         self.t.color("white")
         self.t.setposition(-500, -500)
         self.t.begin_fill()
