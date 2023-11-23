@@ -82,7 +82,7 @@ class OPS:
         # filling pointcloud header
         header = Header()
         header.stamp = rospy.Time.now()
-        header.frame_id = 'map`'
+        header.frame_id = 'map'
         target_pointcloud.header = header
         target_pointcloud.points.append(Point32(x / 20, y / 20, 0))
 

@@ -22,6 +22,6 @@
     <node name="svodall" pkg="vod" type="allObjectsViewer.py" />
     <node name="svodknown" pkg="vod" type="knownObjectsViewer.py" />
 
-    <node name="wall_hugger_nav" pkg="wall_hugger" type="navigation2.py" />
-    <node name="wall_hugger_laser" pkg="wall_hugger" type="laserReader.py" />
+<!--     <node name="wall_hugger_nav" pkg="wall_hugger" type="navigation2.py" /> -->
+<!--     <node name="wall_hugger_laser" pkg="wall_hugger" type="laserReader.py" /> -->
 </launch>

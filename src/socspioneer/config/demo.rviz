@@ -10,6 +10,7 @@ Panels:
         - /PointCloud2
         - /PointCloud3
         - /PointCloud4
+        - /PointCloud4/Status1
       Splitter Ratio: 0.5
     Tree Height: 681
   - Class: rviz/Selection
@@ -195,11 +196,11 @@ Visualization Manager:
       Min Color: 0; 0; 0
       Name: PointCloud
       Position Transformer: ""
-      Queue Size: 10
+      Queue Size: 1
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.5
-      Style: Squares
+      Size (m): 1
+      Style: Spheres
       Topic: /goal_position
       Unreliable: false
       Use Fixed Frame: true
@@ -233,7 +234,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 195.5762176513672
+      Distance: 371.45458984375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -290,4 +291,4 @@ Window Geometry:
     collapsed: true
   Width: 1048
   X: 72
-  Y: 160
+  Y: 123
