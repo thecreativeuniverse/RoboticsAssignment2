@@ -11,6 +11,7 @@ import matplotlib.patches as patches
 
 class OPS:
     def __init__(self):
+        # initialising functions/variables
         rospy.Subscriber("map", OccupancyGrid,
                          self.simple_map_callback)  # [[(5,-5),(5,-4),(5,-3),(5,-3),(5,-2),(5,-1),(5,0),(5,1),(5,2),(5,3),(5,4),(5,5)], [(4,-5), ....]
         rospy.Subscriber("known_objects", String, self.known_objects_callback)  # [("name", (x,y)),("name", (x,y))]
@@ -23,7 +24,7 @@ class OPS:
         self.target_object = None
 
         # SRG
-        self.srg = SRG()  # TODO
+        self.srg = SRG()
         # {"thing":{"thing2":2, "thing3":5}, "thing2":{"thing":2,"thing3":10}, "thing3":{"thing":5,"thing2":10}}
 
         self.simple_map_radius = 250
