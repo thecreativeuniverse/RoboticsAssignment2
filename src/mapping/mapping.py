@@ -1,13 +1,12 @@
 import copy
 from pgmGenerator import pgm
-from objectGenerator import ItemGenerator
+from itemGenerator import ItemGenerator
 from roomGenerator import *
 from svgGenerator import PogTurtle
 import os.path
 
 
-# generate turtle and make the map white
-
+tortoise = PogTurtle()
 
 rooms = []
 
@@ -97,7 +96,6 @@ placedRooms = [currentRoom]
 
 del rooms[current]
 
-tortoise = PogTurtle()
 doors = []
 
 weightedRooms = []
@@ -251,7 +249,6 @@ while len(weightedRooms) > 0:
 
 placedRooms[0] = cloneRoom
 
-tortoise.t.pencolor("red")
 for room in placedRooms:
     tortoise.drawRoom([room.corners[0].coords, room.corners[1].coords,
                        room.corners[2].coords, room.corners[3].coords], room.type)

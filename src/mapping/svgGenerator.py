@@ -20,6 +20,7 @@ class PogTurtle:
         self.t.write("TOMISPOG", font=("Comic Sans MS", 20, "normal"), align="left")
 
     def drawRoom(self, corners, name):
+        self.t.pencolor("red")
         self.t.penup()
         self.t.setposition(corners[0][0] * 20, corners[0][1] * -20)
         self.t.pendown()
