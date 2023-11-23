@@ -3,5 +3,4 @@
 catkin_make
 pip install -r requirements.txt
 python3 src/mapping/mapping.py
-roslaunch main stage.launch
-
+roslaunch main stage.launch 2> >(grep -v TF_REPEATED_DATA buffer_core)
