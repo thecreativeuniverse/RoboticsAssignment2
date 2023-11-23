@@ -1,9 +1,10 @@
 import random
-import turtle
+#import turtle
 import copy
 from pgmGenerator import pgm
 from objectGenerator import ItemGenerator
 import os.path
+from svg_turtle import SvgTurtle
 
 
 # bedroom
@@ -16,12 +17,12 @@ import os.path
 # dining room
 # corridor
 class Room:
-    def __init__(self, roomType, canBeConnectedTo, sizeConstraint, constraint, weight):
-        self.type = roomType
-        self.canBeConnectedTo = canBeConnectedTo
-        self.size = random.randint(sizeConstraint[0], sizeConstraint[1])
+    def __init__(self, room_type, can_be_connected_to, size_constraint, length_constraint, weight):
+        self.type = room_type
+        self.canBeConnectedTo = can_be_connected_to
+        self.size = random.randint(size_constraint[0], size_constraint[1])
         self.rotation = random.choice([True, False])
-        self.length = (random.randint(constraint[0] * 1000, constraint[1] * 1000) / 1000)
+        self.length = (random.randint(length_constraint[0] * 1000, length_constraint[1] * 1000) / 1000)
         self.width = self.size / self.length
         if self.rotation:
             temp = self.length
@@ -78,15 +79,15 @@ class Corner:
 
 def drawBox(corners, name):
     t.penup()
-    t.setposition(corners[0][0] * 20, corners[0][1] * 20)
+    t.setposition(corners[0][0] * 20, corners[0][1] * -20)
     t.pendown()
     for i in range(len(corners)):
-        t.setposition(corners[len(corners) - i - 1][0] * 20, corners[len(corners) - i - 1][1] * 20)
+        t.setposition(corners[len(corners) - i - 1][0] * 20, corners[len(corners) - i - 1][1] * -20)
 
-    midX = round((corners[0][0] + corners[2][0]) / 2)
-    midY = round((corners[0][1] + corners[2][1]) / 2)
+    mid_x = round((corners[0][0] + corners[2][0]) / 2)
+    mid_y = round((corners[0][1] + corners[2][1]) / 2)
     t.penup()
-    t.setposition(midX * 20, midY * 20)
+    t.setposition(mid_x * 20, mid_y * -20)
     t.pendown()
     t.write(name, font=("Verdana", 5, "normal"), align="center")
 
@@ -128,7 +129,7 @@ def checkOverlap(corners, a1, b1, p1, q1, a2, b2, p2, q2):
         if overlap:
             t.pencolor("blue")
             t.penup()
-            t.setposition(corners[i][0] * 20, corners[i][1] * 20)
+            t.setposition(corners[i][0] * 20, corners[i][1] * -20)
             t.pendown()
             t.pensize(5)
             t.forward(1)
@@ -147,6 +148,24 @@ def generateRoomEquationData(room):
     b = (room.corners[0].coords[1] + room.corners[2].coords[1]) / 2
 
     return corners, a, b, p, q
+
+
+t = SvgTurtle(1000, 1000)
+t.hideturtle()
+t.speed(0)
+t.pencolor("white")
+t.setposition(-500,-500)
+t.fillcolor("white")
+t.begin_fill()
+for x in range(4):
+    t.forward(1000)
+    t.left(90)
+t.end_fill()
+t.penup()
+t.setposition(-490,-490)
+t.pendown()
+t.pencolor("black")
+t.write("TOMISPOG", font=("Comic Sans MS", 20, "normal"), align="left")
 
 
 rooms = []
@@ -192,76 +211,34 @@ if bedrooms > 2:
 
 for i in range(len(rooms)):
     if rooms[i] == "bedroom":
-        connections = ["corridor", "main living space", "living room"]
-        size = [8, 20]
-        constraint = [2, 6]
-        weight = 1
+        rooms[i] = Room(rooms[i], ["corridor", "main living space", "living room"], [8, 20], [2, 6], 1)
 
     elif rooms[i] == "ensuite":
-        connections = ["bedroom"]
-        size = [6, 7]
-        constraint = [2, 3]
-        weight = 0
+        rooms[i] = Room(rooms[i], ["bedroom"], [6, 7], [2, 3], 0)
 
     elif rooms[i] == "bathroom":
-        connections = ["corridor", "kitchen", "living room", "main living space", "dining room"]
-        size = [6, 8]
-        constraint = [3, 4]
-        weight = 1
+        rooms[i] = Room(rooms[i], ["corridor", "kitchen", "living room", "main living space"], [6, 8], [3, 4], 1)
 
     elif rooms[i] == "main living space":
-        connections = None
-        size = [35, 60]
-        constraint = [5, 10]
-        weight = 5
+        rooms[i] = Room(rooms[i], None, [35, 60], [5, 10], 5)
 
     elif rooms[i] == "living room":
-        connections = None
-        size = [14, 22]
-        constraint = [3, 6]
-        weight = 5
+        rooms[i] = Room(rooms[i], None, [14, 22], [3, 6], 5)
 
     elif rooms[i] == "kitchen diner combo":
-        connections = ["corridor", "living room"]
-        size = [20, 30]
-        constraint = [4, 7]
-        weight = 3
+        rooms[i] = Room(rooms[i], ["corridor", "living room"], [20, 30], [4, 7], 3)
 
     elif rooms[i] == "kitchen":
-        connections = ["living room", "dining room", "corridor"]
-        size = [10, 20]
-        constraint = [2, 4]
-        weight = 3
+        rooms[i] = Room(rooms[i], ["living room", "dining room", "corridor"], [10, 20], [2, 4], 3)
 
     elif rooms[i] == "dining room":
-        connections = ["living room", "kitchen", "corridor"]
-        size = [10, 20]
-        constraint = [2, 4]
-        weight = 3
+        rooms[i] = Room(rooms[i], ["living room", "kitchen", "corridor"], [10, 20], [2, 4], 3)
+
     else:
-        connections = ["main living space", "living room", "kitchen", "dining room"]
-        size = [4, 10]
-        constraint = [2, 3]
-        weight = 4
-
-    roomObj = Room(rooms[i], connections, size, constraint, weight)
-    rooms[i] = roomObj
-
-t = turtle.Turtle()
-t.hideturtle()
-t.speed(0)
-for _ in range(4):
-    t.forward(1000)
-    t.backward(1000)
-    t.left(90)
-# BOOM that's a lot of rooms, but we still need to connect them together
+        rooms[i] = Room(rooms[i], ["main living space", "living room", "kitchen", "dining room"], [4, 10], [2, 3], 4)
 
 current = getHighestWeightedRoom(rooms)
 currentRoom = rooms[current]
-# generate coordinates
-# make corners based on those coordinates
-# place new room and update/delete/generate new coordinates
-# repeat until all rooms are placed or no solution is found (restart)
 
 upperLeftCoord = [0, 0]
 upperRightCoord = [upperLeftCoord[0] + currentRoom.length, upperLeftCoord[1]]
@@ -434,17 +411,9 @@ placedRooms[0] = cloneRoom
 
 t.pencolor("red")
 for room in placedRooms:
-    upperRightCoord = room.corners[0].coords
-    upperLeftCoord = room.corners[3].coords
-    lowerRightCoord = room.corners[1].coords
-    lowerLeftCoord = room.corners[2].coords
-    drawBox([upperRightCoord, lowerRightCoord, lowerLeftCoord, upperLeftCoord], room.type)
+    drawBox([room.corners[0].coords, room.corners[1].coords, room.corners[2].coords, room.corners[3].coords], room.type)
 
 if len(weightedRooms) == 0:
-    # ok so theoretically this should only happen if it actually placed all the rooms,
-    # but we still need to check that none of the rooms overlap
-    # I derived a looooong equation to do that for all rooms,
-    # so we check no rooms overlap next
     failure = False
     for i in range(len(placedRooms)):
         corners, a1, b1, p1, q1 = generateRoomEquationData(placedRooms[i])
@@ -489,13 +458,13 @@ for room in placedRooms:
 
     newMap.addRoom(xRange, yRange)
 
-width = largestX -smallestX
-height = largestY-smallestY
+width = largestX - smallestX
+height = largestY - smallestY
 
 worldPath = os.path.dirname(__file__)
 worldPath = os.path.join(worldPath, "../mapping/out/world.world")
 
-text ="  size ["+str(width)+" "+str(height)+" 0.5]\n"
+text = "  size [" + str(width) + " " + str(height) + " 0.5]\n"
 
 lines = open(worldPath, 'r').readlines()
 lines[63] = text
@@ -503,34 +472,26 @@ out = open(worldPath, 'w')
 out.writelines(lines)
 out.close()
 
-
-
-
-#print(len(doors))
 for door in doors:
-    #print(door)
     newMap.addDoor([round(door[0] * 20) + offsetX, round(door[1] * 20) + offsetY])
 
-#print(averageX, averageY)
-
 # make some objects idk
-print(random.randint(0,0))
+print(random.randint(0, 0))
 print(placedRooms)
-objList = ItemGenerator()
-objList.generateObjects(placedRooms)
-allItems = copy.deepcopy(objList.allItems)
+itemList = ItemGenerator()
+itemList.generateObjects(placedRooms)
+allItems = copy.deepcopy(itemList.allItems)
 t.pensize(1)
 t.pencolor("black")
 for i in range(len(allItems)):
     t.penup()
-    t.setposition(allItems[i][1]*20,allItems[i][2]*20)
+    t.setposition(allItems[i][1] * 20, allItems[i][2] * -20)
     t.pendown()
     t.forward(1)
-    allItems[i] = (allItems[i][0],(round(allItems[i][1] * 20) + offsetX),(round(allItems[i][2] * 20) + offsetY))
+    allItems[i] = (allItems[i][0], (round(allItems[i][1] * 20) + offsetX), (round(allItems[i][2] * 20) + offsetY))
 
-objList.allItems = allItems
-objList.saveToFile()
-
+itemList.allItems = allItems
+itemList.saveToFile()
 
 # do some rotating to bud!
 
@@ -539,4 +500,8 @@ objList.saveToFile()
 
 newMap.generatePGM()
 
+output_dir = os.path.join(os.path.dirname(__file__), "out")
+os.makedirs(output_dir, exist_ok=True)
+filename = output_dir+'/turtleMap.svg'
+t.save_as(filename)
 # turtle.mainloop()
