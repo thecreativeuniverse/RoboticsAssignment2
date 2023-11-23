@@ -74,13 +74,6 @@ class ItemGenerator:
                     self.itemObjList[-1].addLocation(types[j], info)
 
     def generateObjects(self, room_list):
-        #################################
-        for room in room_list:
-            print(room.type)
-        for item in self.itemObjList:
-            print(vars(item))
-        #################################
-
         for item in self.itemObjList:
             for i in range(len(item.rooms)):
                 if item.quantities[i][1] != 0:

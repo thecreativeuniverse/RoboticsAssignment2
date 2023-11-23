@@ -1,5 +1,5 @@
 import copy
-from pgmGenerator import pgm
+from pgmGenerator import PGM
 from itemGenerator import ItemGenerator
 from roomGenerator import *
 from svgGenerator import PogTurtle
@@ -263,7 +263,7 @@ if len(weightedRooms) == 0:
                         tortoise.drawOverlap(corner)
                     failure = True
 
-newMap = pgm()
+newMap = PGM()
 
 smallestX = 1000
 smallestY = 1000
