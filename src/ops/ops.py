@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Header
 from nav_msgs.msg import OccupancyGrid
+from sensor_msgs.msg import PointCloud
+from geometry_msgs.msg import Point32
 import numpy as np
 from srg import SRG, TrainingSRG
 import object_locator
@@ -17,7 +19,7 @@ class OPS:
         rospy.Subscriber("known_objects", String, self.known_objects_callback)  # [("name", (x,y)),("name", (x,y))]
         rospy.Subscriber("target_object", String, self.target_object_callback)  # name
 
-        self.goal_pos_pub = rospy.Publisher("goal_position", String, queue_size=1)
+        self.goal_pos_pub = rospy.Publisher("goal_position", PointCloud, queue_size=1)
 
         self.estimated_pose = None
         self.known_objects = None
@@ -37,7 +39,7 @@ class OPS:
         self.pdf_map = np.zeros([self.simple_map_radius * 2, self.simple_map_radius * 2])
 
     def simple_map_callback(self, simple_map):
-        self.simple_map = simple_map
+        self.simple_map = simple_map.data
         self.calculate_long_term_goal()
 
     def estimated_pose_callback(self, estimated_pose):
@@ -49,33 +51,45 @@ class OPS:
         self.calculate_long_term_goal()
 
     def target_object_callback(self, target_object):
-        self.target_object = target_object
+        self.target_object = target_object.data
         self.calculate_long_term_goal()
 
     def calculate_long_term_goal(self):
+        print("Calculating long term goal...")
         if not self._validate_subbed_vars():
             return
+        print("Valid")
 
-        data = np.array(self.simple_map.data)
+        data = np.array(self.simple_map)
         size = int(np.sqrt(len(data)))
         data_2d = np.split(data, size)
 
         known_objects = self.known_objects
+        print(known_objects)
 
-        # simple_map = self.simple_map
-        #
-        # srg = self.srg
-        # # target_object = self.target_object
-        # target_object = "bed"
-        # known_object_locations = []
-        #
-        # for obj in known_objects:
-        #     distance = srg.get_distance(obj[0], target_object)
-        #     known_object_locations.append((obj[1], distance, 50))
-        #
-        # res = object_locator.calculate_likelihoods(simple_map, known_object_locations)
-        #
-        # return res
+        srg = self.srg
+        known_object_locations = []
+
+        for obj in known_objects:
+            distance = srg.get_distance(obj[0], self.target_object)
+            known_object_locations.append((obj[1], distance, 50))
+
+        res = object_locator.calculate_likelihoods(coords=data_2d, target=self.target_object, srg=srg,
+                                                   known_obj_locs=known_object_locations)
+
+        (x, y, prob) = max(res, key=lambda l: l[-1])
+
+        target_pointcloud = PointCloud()
+        # filling pointcloud header
+        header = Header()
+        header.stamp = rospy.Time.now()
+        header.frame_id = 'map'
+        target_pointcloud.header = header
+        target_pointcloud.points.append(Point32(x, y, 0))
+
+        self.goal_pos_pub.publish(target_pointcloud)
+        print(f"Target {x} {y}")
+        return res
 
     def train(self):
 
@@ -136,7 +150,6 @@ class OPS:
         highest_prob = max(z)
         highest_prob_index = z.index(highest_prob)
         highest_prob_coords = (x[highest_prob_index], y[highest_prob_index])
-
 
         ax.scatter(x, y, c=z, cmap='cool', marker='.')
 

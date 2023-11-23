@@ -26,11 +26,8 @@ def calculate_likelihoods(coords, target, srg, known_obj_locs):
             continue
         mean, var, _ = known_dists.get(obj)
         distributions.append(((x, y), mean, var))
-    for layer in coords:
-        res_temp = []
-        for temp_x, temp_y in layer:
-            prob_z = get_prob(temp_x, temp_y, distributions)
-            i = (temp_x, temp_y, prob_z)
-            res_temp.append(i)
-        res.append(res_temp)
+    for temp_x, temp_y in coords:
+        prob_z = get_prob(temp_x, temp_y, distributions)
+        i = (temp_x, temp_y, prob_z)
+        res.append(i)
     return res

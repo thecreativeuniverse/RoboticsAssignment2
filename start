@@ -1,6 +1,7 @@
 #!/bin/bash
 
 catkin_make
+pip install -r requirements.txt
 python3 src/mapping/mapping.py
 roslaunch main stage.launch
 

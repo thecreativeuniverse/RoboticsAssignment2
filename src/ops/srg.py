@@ -1,13 +1,16 @@
-import numpy as np
 import os
 import json
+import pandas
+
 
 class SRG:
 
     # dummy srg for now; will need a way to serialise/deserialise this later on.
     def __init__(self, filename=None):
-        if filename == None:
-            objects = ["oven", "kettle", "toaster", "cushion", "sofa", "bed"]
+        if filename is None:
+            current_file = os.path.dirname(__file__)
+            df = pandas.read_csv(os.path.join(current_file, '../mapping/ObjectList.csv'))
+            objects = df.Item.to_list()
             self._srg = {}
             dist, var, n = 100, 10, 1
             for obj in objects:
@@ -39,12 +42,12 @@ class SRG:
             output_dir = os.path.join(os.path.dirname(__file__), "out")
             os.makedirs(output_dir, exist_ok=True)
             filename = 'srg.json'
-            #file = open(os.path.join(output_dir, filename), 'wb')
+            # file = open(os.path.join(output_dir, filename), 'wb')
 
             with open(os.path.join(output_dir, filename), 'w') as file:
                 json.dump(self._srg, file)
 
-            #json.dump(self._srg, file)
+            # json.dump(self._srg, file)
         except IOError:
             print("Error: could ot create file")
 
@@ -57,7 +60,7 @@ class TrainingSRG(SRG):
     def update_weights(self, obj1, obj2, distance):
         mean, var, n = self._srg.get(obj1).get(obj2)
         print("old mean", mean, "old var", var, "distance", distance)
-        var = (n/(n+1)) * (var + (((mean-distance)**2)/n+1))
+        var = (n / (n + 1)) * (var + (((mean - distance) ** 2) / n + 1))
         mean = ((mean * n) + distance) / (n + 1)
         print("new mean", mean, "new var", var)
         srg = self._srg
@@ -68,6 +71,7 @@ class TrainingSRG(SRG):
         obj2_dict.update({obj1: (mean, var, n + 1)})
         srg.update({obj2: obj2_dict})
         self._srg = srg
+
 
 if __name__ == "__main__":
     srg = SRG()
