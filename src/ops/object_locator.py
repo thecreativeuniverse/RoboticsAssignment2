@@ -11,11 +11,11 @@ def get_prob(current_x, current_y, known_dists):
     for ((dist_x, dist_y), dist_distance, dist_var) in known_dists:
         distance = np.sqrt((current_x - dist_x) ** 2 + (current_y - dist_y) ** 2)
         prob += (norm_pdf(distance, dist_distance, dist_var))
-    return prob / len(known_dists)
+    return 0 if len(known_dists) == 0 else prob / len(known_dists)
 
 
 # Generate probs
-def calculate_likelihoods(coords, target, srg, known_obj_locs):
+def calculate_likelihoods(simple_map, target, srg, known_obj_locs):
     res = []
     known_dists = srg.get_target_distribution(target)
     if type(known_obj_locs) is not list:
@@ -26,8 +26,11 @@ def calculate_likelihoods(coords, target, srg, known_obj_locs):
             continue
         mean, var, _ = known_dists.get(obj)
         distributions.append(((x, y), mean, var))
-    for temp_x, temp_y in coords:
-        prob_z = get_prob(temp_x, temp_y, distributions)
-        i = (temp_x, temp_y, prob_z)
-        res.append(i)
+    map_size = round(len(simple_map[0]) / 2)
+    for x in range(-map_size, map_size):
+        for y in range(-map_size, map_size):
+            prob_z = get_prob(x, y, distributions)
+            i = (x, y, prob_z)
+            res.append(i)
+    print(max(res, key=lambda thing:thing[-1]))
     return res

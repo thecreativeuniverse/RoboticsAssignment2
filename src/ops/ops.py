@@ -62,10 +62,9 @@ class OPS:
 
         data = np.array(self.simple_map)
         size = int(np.sqrt(len(data)))
-        data_2d = np.split(data, size)
+        simple_map = np.split(data, size)
 
         known_objects = self.known_objects
-        print(known_objects)
 
         srg = self.srg
         known_object_locations = []
@@ -74,18 +73,18 @@ class OPS:
             distance = srg.get_distance(obj[0], self.target_object)
             known_object_locations.append((obj[1], distance, 50))
 
-        res = object_locator.calculate_likelihoods(coords=data_2d, target=self.target_object, srg=srg,
+        res = object_locator.calculate_likelihoods(simple_map=simple_map, target=self.target_object, srg=srg,
                                                    known_obj_locs=known_object_locations)
 
-        (x, y, prob) = max(res, key=lambda l: l[-1])
+        (x, y, prob) = max(res, key=lambda val: val[-1])
 
         target_pointcloud = PointCloud()
         # filling pointcloud header
         header = Header()
         header.stamp = rospy.Time.now()
-        header.frame_id = 'map'
+        header.frame_id = 'map`'
         target_pointcloud.header = header
-        target_pointcloud.points.append(Point32(x, y, 0))
+        target_pointcloud.points.append(Point32(x / 20, y / 20, 0))
 
         self.goal_pos_pub.publish(target_pointcloud)
         print(f"Target {x} {y}")
@@ -141,11 +140,10 @@ class OPS:
         fig, ax = plt.subplots()
 
         x, y, z = [], [], []
-        for part in res:
-            for tup in part:
-                x.append(tup[0])
-                y.append(tup[1])
-                z.append(tup[2])
+        for tup in res:
+            x.append(tup[0])
+            y.append(tup[1])
+            z.append(tup[2])
 
         highest_prob = max(z)
         highest_prob_index = z.index(highest_prob)
@@ -162,9 +160,9 @@ class OPS:
             else:
                 col = colors.get(name)
             ax.plot(x, y, color=col, marker='x', label=name)
-            circle = patches.Circle((x, y), radius=self.srg.get_distance(name, target), facecolor='none',
-                                    edgecolor=col)
-            ax.add_patch(circle)
+            # circle = patches.Circle((x, y), radius=self.srg.get_distance(name, target), facecolor='none',
+            #                         edgecolor=col)
+            # ax.add_patch(circle)
 
         ax.legend()
         ax.axis('equal')
@@ -183,3 +181,13 @@ if __name__ == '__main__':
     rospy.init_node('ops', anonymous=True)
     ops_locator = OPS()
     rospy.spin()
+    # known_objs = [('bed', (43, -8)), ('coffee table', (44, -6)), ('bedside table', (85, -29)), ('mirror', (56, -22)),
+    #               ('mirror', (54, -28)), ('chair', (47, -2)), ('cushion', (85, -6)), ('cushion', (76, -8)),
+    #               ('cushion', (87, -28)), ('lamp', (85, -4)), ('plant', (60, -20)), ('plant', (75, -16)),
+    #               ('wardrobe', (64, -35)), ('cushion', (77, -40)), ('sofa', (57, -74)), ('television', (53, -63)),
+    #               ('cushion', (55, -72)), ('mirror', (64, -79)), ('shelf', (72, -77)), ('shelf', (77, -98)),
+    #               ('lamp', (68, -96))]
+    # ops_locator = OPS()
+    # res = object_locator.calculate_likelihoods(simple_map=np.zeros(shape=(400, 400)), target="fridge", srg=SRG(),
+    #                                            known_obj_locs=known_objs)
+    # ops_locator._plot(res, known_objs, "fridge", figname="eeeeee.png", colors={})
