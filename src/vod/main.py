@@ -56,6 +56,8 @@ class SVOD():
         self.current_location = (pos[0], pos[1], degrees)
 
     def lsCallback(self, msg):
+        stuff = String(str(self.foundObjects))
+        self.pub.publish(stuff)
         (current_x,current_y, current_theta) = copy.deepcopy(self.current_location)
         for item in self.lines:
             (obj, x, y) = eval(item)
@@ -64,7 +66,7 @@ class SVOD():
             y*=-1
             distance = math.sqrt((x - current_x) ** 2 + (y - current_y) ** 2)
             angle = 360 + self.bearing(x, y, current_x, current_y)
-            robotAngle = 360 + current_theta
+            robotAngle = 450 + current_theta
             #print(f"OBJECT {obj} loc {x}, {y} robotPos {current_x}, {current_y}, dist {distance}") #debugging
             if distance < 100:
                 #print(f"dist<100 angle {angle} robotangle {robotAngle}") #debugging
@@ -83,8 +85,6 @@ class SVOD():
                         if not exists:
                             self.foundObjects.append((obj, x, y))
             #print("=============================")
-        stuff = String(str(self.foundObjects))
-
         robotPos = PointCloud()
         # filling pointcloud header
         header = std_msgs.msg.Header()
@@ -92,9 +92,10 @@ class SVOD():
         header.frame_id = 'map'
         robotPos.header = header
         robotPos.points.append(Point32(current_x/20,current_y/20,0))
+
+
         self.bot.publish(robotPos)
 
-        self.pub.publish(stuff)
 
     def listener(self, ):
         rospy.init_node('known_objects', anonymous=True)
@@ -102,6 +103,7 @@ class SVOD():
 
         rospy.Subscriber('base_scan', LaserScan, self.lsCallback)
         rospy.spin()
+
 
 
 if __name__ == '__main__':
