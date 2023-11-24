@@ -29,8 +29,14 @@ def callback(msg):
 
     """
 
-    if averages[2] > 1:
-        base_data.linear.x = 1
+    # Crash recovery first
+    if averages[0] < 0.3 or averages[1] < 0.3 or averages[2] < 0.3 or averages[3] < 0.3 or averages[4] < 0.3:
+    # elif lowest[0] < 0.3:
+        base_data.linear.x = -200
+        base_data.linear.z = 3
+    # sleep for 5 seconds
+    elif averages[2] > 1:
+        base_data.linear.x = 0.5
     elif averages[0] > 0.5 or averages[1] > 0.5:
         base_data.linear.x = 0
         base_data.angular.z = -1.5
