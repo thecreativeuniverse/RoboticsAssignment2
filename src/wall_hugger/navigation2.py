@@ -7,7 +7,6 @@ import time
 
 pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
 
-
 def callback(msg):
     lowest = [msg.data[0], msg.data[1]]
     highest = [msg.data[2], msg.data[3]]
@@ -20,6 +19,10 @@ def callback(msg):
     base_data = Twist()
 
     # TODO: implement crash recovery, it cant just contemplate life in front of the wall
+    # TODO: Subscribe to object count use this as a basis for when to switch to A* searching after meeting a threshold of the number of objects found
+    # TODO: If statement that does crash recovery deals well with walls, but not doorways, need to add separate condition that is prior to this that deals with entering doorways.
+    # TODO: Add some random rotational movement in rooms so that it will "discover" the middles of rooms
+    # TODO: Add publisher which converts gmapping localisation transformation function to actual location
     """
     This section is used to determine the direction the robot will go
     If the robot sees that...
@@ -27,7 +30,6 @@ def callback(msg):
         there is a wall to the right and middle right of it, it will turn to go to another direction (its in a corner)
         there is a wall to the left and middle left of it, it will turn to go to another direction (its in a corner)
         there is a wall right in front of it, turn left right or backwards based on randomnesss
-
     """
 
     # Crash recovery first
@@ -72,13 +74,11 @@ def callback(msg):
     #    pub.publish(base_data)
     # rospy.sleep(rospy.Duration(1, 0))
 
-
 def listener():
     rospy.init_node("Navigation", anonymous=True)
     rospy.Subscriber('proximity_sensor', Float64MultiArray, callback)
 
     rospy.spin()
-
 
 if __name__ == '__main__':
     try:
