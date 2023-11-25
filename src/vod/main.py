@@ -44,8 +44,8 @@ class SVOD():
         RAD2DEG = 57.2957795130823209
         if x1 == x2 and y1 == y2:
             return 0
-        theta = math.atan2(x2 - x1, y2 - y1)
-        return 90-(RAD2DEG * theta)
+        theta = math.atan2(x1 - x2, y1 - y2)
+        return (RAD2DEG * theta)
 
     def odomCallback(self, msg):
         scale = 20
@@ -59,6 +59,7 @@ class SVOD():
         stuff = String(str(self.foundObjects))
         self.pub.publish(stuff)
         (current_x,current_y, current_theta) = copy.deepcopy(self.current_location)
+        print("*****")
         for item in self.lines:
             (obj, x, y) = eval(item)
             x -= 250
@@ -66,24 +67,18 @@ class SVOD():
             y*=-1
             distance = math.sqrt((x - current_x) ** 2 + (y - current_y) ** 2)
             angle = 360 + self.bearing(x, y, current_x, current_y)
-            robotAngle = 450 + current_theta
-            #print(f"OBJECT {obj} loc {x}, {y} robotPos {current_x}, {current_y}, dist {distance}") #debugging
-            if distance < 100:
-                #print(f"dist<100 angle {angle} robotangle {robotAngle}") #debugging
-                if robotAngle - 90 < angle < robotAngle + 90:
-                    #print("within angle") #debugging
-                    lineIndex = (round(((90 - (angle % 360) - (robotAngle % 360)) / 180) * 500))
-                    #print(f"lineindex {lineIndex} thing dist {msg.ranges[lineIndex]}") #debugging
-                    if distance < 20 * msg.ranges[lineIndex]:
-                        #print("distance < 20*lineindec") #debugging
-                        exists = False
-                        for objectPosition in self.foundObjects:
-                            if objectPosition[1] == x and objectPosition[2] == y:
-                                exists = True
-                            else:
-                                pass
-                        if not exists:
-                            self.foundObjects.append((obj, x, y))
+            robotAngle = current_theta
+            if 360+(robotAngle - 90)%360 < 360+(angle)%360 < 360+(robotAngle + 90)%360:
+                lineIndex = (round(((90 - ((angle)%360 - robotAngle)) / 180) * 499))
+                if distance < 20 * msg.ranges[lineIndex]:
+                    exists = False
+                    for objectPosition in self.foundObjects:
+                        if objectPosition[1] == x and objectPosition[2] == y:
+                            exists = True
+                        else:
+                            pass
+                    if not exists:
+                        self.foundObjects.append((obj, x, y))
             #print("=============================")
         robotPos = PointCloud()
         # filling pointcloud header
@@ -92,7 +87,12 @@ class SVOD():
         header.frame_id = 'map'
         robotPos.header = header
         robotPos.points.append(Point32(current_x/20,current_y/20,0))
-
+        for i in range(len(msg.ranges)):
+            laser_angle = current_theta
+            print(i,msg.ranges[i])
+            laser_x = math.sin(math.radians(laser_angle+90-((i*180)/500)))*msg.ranges[i] +current_x/20
+            laser_y = math.cos(math.radians(laser_angle+90-((i*180)/500)))*msg.ranges[i]+ current_y/20
+            robotPos.points.append(Point32(laser_x,laser_y,0))
 
         self.bot.publish(robotPos)
 
