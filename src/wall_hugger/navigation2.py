@@ -17,8 +17,6 @@ def callback(msg):
     # Averages: right, middle right, middle, middle left, left
     averages = [msg.data[4], msg.data[5], msg.data[6], msg.data[7], msg.data[8]]
 
-    # position = msg.data[1]
-
     base_data = Twist()
 
     # TODO: Subscribe to object count use this as a basis for when to switch to A* searching after meeting a threshold of the number of objects found
@@ -72,14 +70,11 @@ def odomCallback(msg):
         odomRecent.pop(0)
         odomRecent.append(msg.pose.pose)
 
-def tfCallback(msg):
-    
-
 def listener():
     rospy.init_node("Navigation", anonymous=True)
     rospy.Subscriber('proximity_sensor', Float64MultiArray, callback)
     rospy.Subscriber('odom', Odometry, odomCallback )
-    rospy.Subscriber('tf', TransformStamped[], tfCallback)
+    rospy.Subscriber('tf', TransformStamped, tfCallback)
     odomPub = rospy.Publisher("estimated_pose", Odometry, queue_size=10)
 
     rospy.spin()
