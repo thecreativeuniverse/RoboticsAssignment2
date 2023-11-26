@@ -3,8 +3,10 @@ import rospy
 import random
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
+from nav_msgs.msg import Odometry
 import time
 
+odomRecent = []
 pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
 
 def callback(msg):
@@ -33,50 +35,44 @@ def callback(msg):
     """
 
     # Crash recovery first
-    if averages[0] < 0.5 or averages[1] < 0.4 or averages[2] < 0.4 or averages[3] < 0.4 or averages[4] < 0.5:
-    # elif lowest[0] < 0.3:
-        base_data.linear.x = -100
+    if averages[0] < 0.45 or averages[1] < 0.4 or averages[2] < 0.4:
+        base_data.linear.x = -5
         pub.publish(base_data)
         rospy.sleep(0.1)
         base_data.linear.x = 0
-        base_data.angular.z = -5
+        base_data.angular.z = 0.5
         pub.publish(base_data)
         rospy.sleep(0.1)
-        # sleep for 5 seconds
-    elif averages[2] > 0.5:
+    elif averages[3] < 0.4 or averages[4] < 0.45:
+        base_data.linear.x = -5
+        pub.publish(base_data)
+        rospy.sleep(0.1)
+        base_data.linear.x = 0
+        base_data.angular.z = -0.5
+        pub.publish(base_data)
+        rospy.sleep(0.1)
+    elif averages[2] >= 0.4:
         base_data.linear.x = 0.5
-    elif averages[0] > 0.5 or averages[1] > 0.5:
-        base_data.linear.x = 0
-        base_data.angular.z = -1.5
-    elif averages[3] > 0.5 or averages[4] > 0.5:
-        base_data.linear.x = 0
-        base_data.angular.z = 1.5
-    elif averages[2] <= 0.5:
-        # direction = random.randint(1, 3)
-        base_data.linear.x = 0
-        # if direction == 1:
-            # base_data.angular.z = 1
-        # elif direction == 2: 
-        base_data.angular.z = 1
-        # else:
-        #     base_data.angular.z = -1
+        base_data.angular.z += (random.random() *0.5) -0.25
+    elif (abs(odomRecent[0].position.x - odomRecent[1].position.x) <= 0.01) & (abs(odomRecent[0].position.y - odomRecent[1].position.y) <= 0.01):
+        base_data.linear.x = -0.5
+        base_data.angular.z += (random.random() *0.5) -0.25
     else:
-        # base_data.angular.z = 5
-        base_data.linear.x = 1
+        base_data.linear.x = -1
 
-    # base_data.linear.x *= 1.5
-    #    else:
-    #        base_data.angular.z = -4
-    #    base_data.linear.x = 0
     pub.publish(base_data)
-    # else:
-    #    base_data.linear.x = 1
-    #    pub.publish(base_data)
-    # rospy.sleep(rospy.Duration(1, 0))
+
+def odomCallback(msg):
+    if (odomRecent.length < 5):
+        odomRecent.append(msg.pose.pose)
+    else:
+        odomRecent.pop(0)
+        odomRecent.append(msg.pose.pose)
 
 def listener():
     rospy.init_node("Navigation", anonymous=True)
     rospy.Subscriber('proximity_sensor', Float64MultiArray, callback)
+    rospy.Subscriber('odom', Odometry, odomCallback )
 
     rospy.spin()
 
