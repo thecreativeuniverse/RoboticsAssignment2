@@ -4,6 +4,7 @@ import random
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import Odometry
+from geometry_msgs import TransformStamped
 import time
 
 odomRecent = []
@@ -41,6 +42,7 @@ def callback(msg):
         base_data.angular.z = 0.5
         cmdPub.publish(base_data)
         rospy.sleep(0.1)
+
     elif averages[3] < 0.4 or averages[4] < 0.45:
         base_data.linear.x = -5
         cmdPub.publish(base_data)
@@ -49,28 +51,36 @@ def callback(msg):
         base_data.angular.z = -0.5
         cmdPub.publish(base_data)
         rospy.sleep(0.1)
+
     elif averages[2] >= 0.4:
         base_data.linear.x = 0.5
         base_data.angular.z += (random.random() *0.5) -0.25
+
     elif (abs(odomRecent[0].position.x - odomRecent[1].position.x) <= 0.01) & (abs(odomRecent[0].position.y - odomRecent[1].position.y) <= 0.01):
         base_data.linear.x = -0.5
         base_data.angular.z += (random.random() *0.5) -0.25
+
     else:
         base_data.linear.x = -1
 
     cmdPub.publish(base_data)
 
 def odomCallback(msg):
-    if (odomRecent.length < 5):
+    if (len(odomRecent) < 5):
         odomRecent.append(msg.pose.pose)
     else:
         odomRecent.pop(0)
         odomRecent.append(msg.pose.pose)
 
+def tfCallback(msg):
+    
+
 def listener():
     rospy.init_node("Navigation", anonymous=True)
     rospy.Subscriber('proximity_sensor', Float64MultiArray, callback)
     rospy.Subscriber('odom', Odometry, odomCallback )
+    rospy.Subscriber('tf', TransformStamped[], tfCallback)
+    odomPub = rospy.Publisher("estimated_pose", Odometry, queue_size=10)
 
     rospy.spin()
 
