@@ -7,7 +7,7 @@ from nav_msgs.msg import Odometry
 import time
 
 odomRecent = []
-pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
+cmdPub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
 
 def callback(msg):
     lowest = [msg.data[0], msg.data[1]]
@@ -20,11 +20,9 @@ def callback(msg):
 
     base_data = Twist()
 
-    # TODO: implement crash recovery, it cant just contemplate life in front of the wall
     # TODO: Subscribe to object count use this as a basis for when to switch to A* searching after meeting a threshold of the number of objects found
-    # TODO: If statement that does crash recovery deals well with walls, but not doorways, need to add separate condition that is prior to this that deals with entering doorways.
-    # TODO: Add some random rotational movement in rooms so that it will "discover" the middles of rooms
     # TODO: Add publisher which converts gmapping localisation transformation function to actual location
+    # TODO: Further Add some random rotational movement in rooms so that it will "discover" the middles of rooms
     """
     This section is used to determine the direction the robot will go
     If the robot sees that...
@@ -37,19 +35,19 @@ def callback(msg):
     # Crash recovery first
     if averages[0] < 0.45 or averages[1] < 0.4 or averages[2] < 0.4:
         base_data.linear.x = -5
-        pub.publish(base_data)
+        cmdPub.publish(base_data)
         rospy.sleep(0.1)
         base_data.linear.x = 0
         base_data.angular.z = 0.5
-        pub.publish(base_data)
+        cmdPub.publish(base_data)
         rospy.sleep(0.1)
     elif averages[3] < 0.4 or averages[4] < 0.45:
         base_data.linear.x = -5
-        pub.publish(base_data)
+        cmdPub.publish(base_data)
         rospy.sleep(0.1)
         base_data.linear.x = 0
         base_data.angular.z = -0.5
-        pub.publish(base_data)
+        cmdPub.publish(base_data)
         rospy.sleep(0.1)
     elif averages[2] >= 0.4:
         base_data.linear.x = 0.5
@@ -60,7 +58,7 @@ def callback(msg):
     else:
         base_data.linear.x = -1
 
-    pub.publish(base_data)
+    cmdPub.publish(base_data)
 
 def odomCallback(msg):
     if (odomRecent.length < 5):
