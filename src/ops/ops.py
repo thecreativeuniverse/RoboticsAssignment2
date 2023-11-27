@@ -1,5 +1,4 @@
-import time
-
+#!/usr/bin/env python3
 import rospy
 from std_msgs.msg import String, Header
 from nav_msgs.msg import OccupancyGrid
@@ -222,76 +221,48 @@ class OPS:
         self.ALREADY_CALCULATING = False
 
     def train(self):
-        solid_known_objects = self.known_objects
+
+        target = "oven"
+
+        print(self.srg.get_target_distribution(target))
+
+        solid_known_objects = [("kettle", (-150, 150)), ("toaster", (-200, 180)), ("oven", (-200, -150)),
+                               ("cushion", (80, -200)), ("sofa", (70, 100)), ("bed", (50, -76))]
         simple_map = self.simple_map
 
-        time.sleep(180)
+        colors = {}
 
-        if solid_known_objects == None:
-            return
+        res = object_locator.calculate_likelihoods(simple_map, target, self.srg, solid_known_objects)
+        colors = self._plot(res, solid_known_objects, target, f"train-first", colors)
 
-        for target in solid_known_objects:
-            print(self.srg.get_target_distribution(target))
+        for i in range(10):
+            known_objects = []
+            for obj, (x, y) in solid_known_objects:
+                x += np.random.normal(scale=25)
+                y += np.random.normal(scale=25)
+                known_objects.append((obj, (x, y)))
 
-            for i in range(10):
-                known_objects = []
-                for obj, (x, y) in solid_known_objects:
-                    x += np.random.normal(scale=25)
-                    y += np.random.normal(scale=25)
-                    known_objects.append((obj, (x, y)))
+            estimated = known_objects.copy()
+            del estimated[2]
+            res = object_locator.calculate_likelihoods(simple_map, target, self.srg, estimated)
+            colors = self._plot(res, solid_known_objects, target, f"train-{i}", colors)
+            for j in range(len(known_objects)):
+                obj1, (x1, y1) = known_objects[j]
+                for k in range(j + 1, len(known_objects)):
+                    obj2, (x2, y2) = known_objects[k]
+                    distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+                    self.srg.update_weights(obj1, obj2, distance)
+            print(f"Iteration {i} done")
 
-                estimated = known_objects.copy()
-                for obj1, (x1,y1) in known_objects:
-                    for obj2, (x2,y2) in known_objects:
-                        distance = np.sqrt((x1-x2) ** 2 + (y1-y2 ** 2))
-                        self.srg.update_weights(obj1, obj2, distance)
+        known_objects = []
+        for obj, (x, y) in solid_known_objects:
+            x += np.random.normal(scale=50)
+            y += np.random.normal(scale=50)
+            known_objects.append((obj, (x, y)))
 
-            print(self.srg.get_target_distribution(target))
-
-        # target = "oven"
-        #
-        # print(self.srg.get_target_distribution(target))
-        #
-        # solid_known_objects = [("kettle", (-150, 150)), ("toaster", (-200, 180)), ("oven", (-200, -150)),
-        #                        ("cushion", (80, -200)), ("sofa", (70, 100)), ("bed", (50, -76))]
-        # simple_map = self.simple_map
-        #
-        # colors = {}
-        #
-        # res = object_locator.calculate_likelihoods(simple_map, target, self.srg, solid_known_objects)
-        # colors = self._plot(res, solid_known_objects, target, f"train-first", colors)
-        #
-        # for i in range(10):
-        #     known_objects = []
-        #     for obj, (x, y) in solid_known_objects:
-        #         x += np.random.normal(scale=25)
-        #         y += np.random.normal(scale=25)
-        #         known_objects.append((obj, (x, y)))
-        #
-        #     estimated = known_objects.copy()
-        #     del estimated[2]
-        #     res = object_locator.calculate_likelihoods(simple_map, target, self.srg, estimated)
-        #     colors = self._plot(res, solid_known_objects, target, f"train-{i}", colors)
-        #     for j in range(len(known_objects)):
-        #         obj1, (x1, y1) = known_objects[j]
-        #         for k in range(j + 1, len(known_objects)):
-        #             obj2, (x2, y2) = known_objects[k]
-        #             distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-        #             self.srg.update_weights(obj1, obj2, distance)
-        #     print(f"Iteration {i} done")
-        #
-        # known_objects = []
-        # for obj, (x, y) in solid_known_objects:
-        #     x += np.random.normal(scale=50)
-        #     y += np.random.normal(scale=50)
-        #     known_objects.append((obj, (x, y)))
-        #
-        # res = object_locator.calculate_likelihoods(simple_map, target, self.srg, solid_known_objects)
-        # self._plot(res, solid_known_objects, target, f"train-final", colors)
-        # print("done")
-        #
-        # print(self.srg.get_target_distribution(target))
-        
+        res = object_locator.calculate_likelihoods(simple_map, target, self.srg, solid_known_objects)
+        self._plot(res, solid_known_objects, target, f"train-final", colors)
+        print("done")
 
     def _plot(self, res, known_objects, target, figname, colors):
         fig, ax = plt.subplots()
@@ -346,18 +317,10 @@ class OPS:
 
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-    new =OPS()
-    new.train()
-    # rospy.init_node('ops', anonymous=True)
-    # ops_locator = OPS()
-    # rospy.spin()
-=======
     rospy.init_node('ops', anonymous=True)
     ops_locator = OPS()
     rospy.spin()
     # debugging - not for main use
->>>>>>> 176aabce7c5c628bc63fe37ad46a4780cbe3f768
     # known_objs = [('bed', (43, -8)), ('coffee table', (44, -6)), ('bedside table', (85, -29)), ('mirror', (56, -22)),
     #               ('mirror', (54, -28)), ('chair', (47, -2)), ('cushion', (85, -6)), ('cushion', (76, -8)),
     #               ('cushion', (87, -28)), ('lamp', (85, -4)), ('plant', (60, -20)), ('plant', (75, -16)),
