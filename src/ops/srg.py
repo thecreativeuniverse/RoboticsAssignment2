@@ -12,12 +12,12 @@ class SRG:
             df = pandas.read_csv(os.path.join(current_file, '../mapping/ObjectList.csv'))
             objects = df.Item.to_list()
             self._srg = {}
-            dist, var, n = 100, 10, 1
+            dist, var, n = 100, 50, 1
             for obj in objects:
                 object_dict = {}
                 for temp in objects:
                     if temp == obj:
-                        object_dict.update({temp: (0, 0, 0)})
+                        object_dict.update({temp: (0, 50, 0)})
                     elif temp in self._srg:
                         object_dict.update({temp: self._srg.get(temp).get(obj)})
                     else:

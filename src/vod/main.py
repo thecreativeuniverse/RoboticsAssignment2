@@ -30,7 +30,6 @@ class SVOD():
         self.pub = rospy.Publisher('/known_objects', String, queue_size=1)
         self.bot = rospy.Publisher("/my_pointcloud_topic2", PointCloud, queue_size=1)
 
-
         self.current_location = (0, 0, 0)
 
         path = os.path.dirname(__file__)
@@ -59,7 +58,6 @@ class SVOD():
         stuff = String(str(self.foundObjects))
         self.pub.publish(stuff)
         (current_x,current_y, current_theta) = copy.deepcopy(self.current_location)
-        print("*****")
         for item in self.lines:
             (obj, x, y) = eval(item)
             x -= 250
@@ -72,14 +70,13 @@ class SVOD():
                 lineIndex = (round(((90 - ((angle)%360 - robotAngle)) / 180) * 499))
                 if distance < 20 * msg.ranges[lineIndex]:
                     exists = False
-                    for objectPosition in self.foundObjects:
-                        if objectPosition[1] == x and objectPosition[2] == y:
+                    for _, (pos_x,pos_y) in self.foundObjects:
+                        if pos_x == x and pos_y == y:
                             exists = True
                         else:
                             pass
                     if not exists:
-                        self.foundObjects.append((obj, x, y))
-            #print("=============================")
+                        self.foundObjects.append((obj, (x, y)))
         robotPos = PointCloud()
         # filling pointcloud header
         header = std_msgs.msg.Header()
@@ -89,7 +86,6 @@ class SVOD():
         robotPos.points.append(Point32(current_x/20,current_y/20,0))
         for i in range(len(msg.ranges)):
             laser_angle = current_theta
-            print(i,msg.ranges[i])
             laser_x = math.sin(math.radians(laser_angle+90-((i*180)/500)))*msg.ranges[i] +current_x/20
             laser_y = math.cos(math.radians(laser_angle+90-((i*180)/500)))*msg.ranges[i]+ current_y/20
             robotPos.points.append(Point32(laser_x,laser_y,0))

@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     target_obj, x, y = eval(lines[np.random.randint(0, high=len(lines))])
     target_obj_publisher.publish(std_msgs.msg.String(target_obj))
-    print("target obj ", target_obj) #debugging
+    print("target obj ", target_obj)  # debugging
 
     # publish
     pointcloud_publisher.publish(itemPointcloud)

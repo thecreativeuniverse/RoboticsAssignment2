@@ -15,13 +15,11 @@
         <param name="map_update_interval" value="1" />
     </node>
 
+    <node name="svod" pkg="vod" output="screen" type="main.py" />
+    <node name="ops" pkg="ops" output="screen" type="ops.py" />
+    <node name="svodall" pkg="vod" output="screen" type="allObjectsViewer.py" launch-prefix="bash -c 'sleep 1; $0 $@' "/>
+    <node name="svodknown" pkg="vod" output="screen" type="knownObjectsViewer.py" />
 
-
-    <node name="svod" pkg="vod" type="main.py" />
-    <node name="ops" pkg="ops" type="ops.py" />
-    <node name="svodall" pkg="vod" type="allObjectsViewer.py" />
-    <node name="svodknown" pkg="vod" type="knownObjectsViewer.py" />
-
-<!--     <node name="wall_hugger_nav" pkg="wall_hugger" type="navigation2.py" /> -->
-<!--     <node name="wall_hugger_laser" pkg="wall_hugger" type="laserReader.py" /> -->
+    <node name="wall_hugger_nav" pkg="wall_hugger" type="navigation2.py" />
+    <node name="wall_hugger_laser" pkg="wall_hugger" type="laserReader.py" />
 </launch>
