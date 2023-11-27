@@ -83,7 +83,7 @@ class ItemGenerator:
                     if len(room_indexes) > 0 :
                         self.itemRooms.append(data)
 
-        wall_gap = 0.3
+        wall_gap = 0.5
         for i in range(len(room_list)):
             room_items = []
             for potentialItem in self.itemRooms:
@@ -94,10 +94,8 @@ class ItemGenerator:
                     top_left_corner = [top_left_corner[0] + wall_gap, top_left_corner[1] - wall_gap]
                     bottom_right_corner = [bottom_right_corner[0] - wall_gap, bottom_right_corner[1] + wall_gap]
                     for k in range(item_quantity):
-                        x_coord = random.randint(round(top_left_corner[0]) * 1000,
-                                                 round(bottom_right_corner[0]) * 1000) / 1000
-                        y_coord = random.randint(round(bottom_right_corner[1]) * 1000,
-                                                 round(top_left_corner[1]) * 1000) / 1000
+                        x_coord = random.randint(round(top_left_corner[0]) * 1000,round(bottom_right_corner[0]) * 1000) / 1000
+                        y_coord = random.randint(round(bottom_right_corner[1]) * 1000,round(top_left_corner[1]) * 1000) / 1000
                         room_items.append((potentialItem[0], x_coord, y_coord))
                         self.allItems.append((potentialItem[0], x_coord, y_coord))
 
