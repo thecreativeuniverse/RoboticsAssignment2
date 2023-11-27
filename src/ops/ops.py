@@ -346,11 +346,18 @@ class OPS:
 
 
 if __name__ == '__main__':
-    new = OPS()
+<<<<<<< HEAD
+    new =OPS()
     new.train()
     # rospy.init_node('ops', anonymous=True)
     # ops_locator = OPS()
     # rospy.spin()
+=======
+    rospy.init_node('ops', anonymous=True)
+    ops_locator = OPS()
+    rospy.spin()
+    # debugging - not for main use
+>>>>>>> 176aabce7c5c628bc63fe37ad46a4780cbe3f768
     # known_objs = [('bed', (43, -8)), ('coffee table', (44, -6)), ('bedside table', (85, -29)), ('mirror', (56, -22)),
     #               ('mirror', (54, -28)), ('chair', (47, -2)), ('cushion', (85, -6)), ('cushion', (76, -8)),
     #               ('cushion', (87, -28)), ('lamp', (85, -4)), ('plant', (60, -20)), ('plant', (75, -16)),
