@@ -1,3 +1,5 @@
+import random
+
 from pgmGenerator import PGM
 from itemGenerator import ItemGenerator
 from svgGenerator import PogTurtle
@@ -89,6 +91,15 @@ for room in placedRooms:
 width = largestX - smallestX
 height = largestY - smallestY
 
+roomIndex = random.randint(0,len(placedRooms)-1)
+room = placedRooms[roomIndex]
+
+topLeft = room.corners[3].coords
+bottomRight = room.corners[1].coords
+x_center = round((topLeft[0] + bottomRight[0])/2-averageX,2)
+y_center = round((-1*(topLeft[1] + round(bottomRight[1])))/2+averageY,2)
+robotPos = 'pioneer( pose [ '+str(x_center)+' '+str(y_center)+' 0 0 ] name "robot" color "blue")\n'
+
 worldPath = os.path.dirname(__file__)
 worldPath = os.path.join(worldPath, "../mapping/out/world.world")
 
@@ -96,6 +107,7 @@ text = "  size [" + str(width) + " " + str(height) + " 0.5]\n"
 
 lines = open(worldPath, 'r').readlines()
 lines[63] = text
+lines[66] = robotPos
 out = open(worldPath, 'w')
 out.writelines(lines)
 out.close()
