@@ -29,19 +29,19 @@ def callback(msg):
     highest = max(msg.ranges)
     highest_location = msg.ranges.index(highest)
 
-    right = msg.ranges[:100]
+    right = msg.ranges[:75]
     right_avg = sum(right) / len(right)
 
-    middle_right = msg.ranges[100:200]
+    middle_right = msg.ranges[75:220]
     middle_right_avg = sum(middle_right) / len(middle_right)
 
-    middle = msg.ranges[200:300]
+    middle = msg.ranges[220:280]
     middle_avg = sum(middle) / len(middle)
 
-    middle_left = msg.ranges[300:400]
+    middle_left = msg.ranges[280:425]
     middle_left_avg = sum(middle_left) / len(middle_left)
 
-    left = msg.ranges[400:]
+    left = msg.ranges[425:]
     left_avg = sum(left) / len(left)
 
     stuff = Float64MultiArray()

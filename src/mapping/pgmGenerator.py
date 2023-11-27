@@ -25,6 +25,7 @@ class PGM:
                         self.arr[(y * self.width) + x] = 1
 
     def addDoor(self, coords):
+        #maybe bigger doors? Setting the 10s to 15 seemed to make it better. Robot is struggling with the smaller doorways.
         x_range = [coords[0] - 10, coords[0] + 10]
         y_range = [coords[1] - 10, coords[1] + 10]
         for y in range(self.height):
