@@ -9,6 +9,7 @@ from srg import SRG, TrainingSRG
 import object_locator
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import time
 
 
 class OPS:
@@ -27,7 +28,7 @@ class OPS:
         self.target_object = None
 
         # SRG
-        self.srg = SRG()
+        self.srg = TrainingSRG() # Change depending on training
         # {"thing":{"thing2":2, "thing3":5}, "thing2":{"thing":2,"thing3":10}, "thing3":{"thing":5,"thing2":10}}
 
         self.simple_map_radius = 250
@@ -51,6 +52,9 @@ class OPS:
         print("")
 
         self.ALREADY_CALCULATING = False
+
+        time.sleep(60)
+        self.train()
 
     def simple_map_callback(self, simple_map):
         self.simple_map = simple_map.data
@@ -221,48 +225,73 @@ class OPS:
         self.ALREADY_CALCULATING = False
 
     def train(self):
-
-        target = "oven"
-
-        print(self.srg.get_target_distribution(target))
-
-        solid_known_objects = [("kettle", (-150, 150)), ("toaster", (-200, 180)), ("oven", (-200, -150)),
-                               ("cushion", (80, -200)), ("sofa", (70, 100)), ("bed", (50, -76))]
+        solid_known_objects = self.known_objects
         simple_map = self.simple_map
 
-        colors = {}
+        print(solid_known_objects)
 
-        res = object_locator.calculate_likelihoods(simple_map, target, self.srg, solid_known_objects)
-        colors = self._plot(res, solid_known_objects, target, f"train-first", colors)
+        if solid_known_objects == None:
+            return
 
-        for i in range(10):
-            known_objects = []
-            for obj, (x, y) in solid_known_objects:
-                x += np.random.normal(scale=25)
-                y += np.random.normal(scale=25)
-                known_objects.append((obj, (x, y)))
+        for target, coords in solid_known_objects:
+            # print(self.srg.get_target_distribution(target))
 
-            estimated = known_objects.copy()
-            del estimated[2]
-            res = object_locator.calculate_likelihoods(simple_map, target, self.srg, estimated)
-            colors = self._plot(res, solid_known_objects, target, f"train-{i}", colors)
-            for j in range(len(known_objects)):
-                obj1, (x1, y1) = known_objects[j]
-                for k in range(j + 1, len(known_objects)):
-                    obj2, (x2, y2) = known_objects[k]
-                    distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-                    self.srg.update_weights(obj1, obj2, distance)
-            print(f"Iteration {i} done")
+            for i in range(10):
+                known_objects = []
+                for obj, (x, y) in solid_known_objects:
+                    x += np.random.normal(scale=25)
+                    y += np.random.normal(scale=25)
+                    known_objects.append((obj, (x, y)))
 
-        known_objects = []
-        for obj, (x, y) in solid_known_objects:
-            x += np.random.normal(scale=50)
-            y += np.random.normal(scale=50)
-            known_objects.append((obj, (x, y)))
+                estimated = known_objects.copy()
+                for obj1, (x1, y1) in known_objects:
+                    for obj2, (x2, y2) in known_objects:
+                        distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2 ** 2))
+                        self.srg.update_weights(obj1, obj2, distance)
 
-        res = object_locator.calculate_likelihoods(simple_map, target, self.srg, solid_known_objects)
-        self._plot(res, solid_known_objects, target, f"train-final", colors)
-        print("done")
+            # print(self.srg.get_target_distribution(target))
+
+        # target = "oven"
+        #
+        # print(self.srg.get_target_distribution(target))
+        #
+        # solid_known_objects = [("kettle", (-150, 150)), ("toaster", (-200, 180)), ("oven", (-200, -150)),
+        #                        ("cushion", (80, -200)), ("sofa", (70, 100)), ("bed", (50, -76))]
+        # simple_map = self.simple_map
+        #
+        # colors = {}
+        #
+        # res = object_locator.calculate_likelihoods(simple_map, target, self.srg, solid_known_objects)
+        # colors = self._plot(res, solid_known_objects, target, f"train-first", colors)
+        #
+        # for i in range(10):
+        #     known_objects = []
+        #     for obj, (x, y) in solid_known_objects:
+        #         x += np.random.normal(scale=25)
+        #         y += np.random.normal(scale=25)
+        #         known_objects.append((obj, (x, y)))
+        #
+        #     estimated = known_objects.copy()
+        #     del estimated[2]
+        #     res = object_locator.calculate_likelihoods(simple_map, target, self.srg, estimated)
+        #     colors = self._plot(res, solid_known_objects, target, f"train-{i}", colors)
+        #     for j in range(len(known_objects)):
+        #         obj1, (x1, y1) = known_objects[j]
+        #         for k in range(j + 1, len(known_objects)):
+        #             obj2, (x2, y2) = known_objects[k]
+        #             distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+        #             self.srg.update_weights(obj1, obj2, distance)
+        #     print(f"Iteration {i} done")
+        #
+        # known_objects = []
+        # for obj, (x, y) in solid_known_objects:
+        #     x += np.random.normal(scale=50)
+        #     y += np.random.normal(scale=50)
+        #     known_objects.append((obj, (x, y)))
+        #
+        # res = object_locator.calculate_likelihoods(simple_map, target, self.srg, solid_known_objects)
+        # self._plot(res, solid_known_objects, target, f"train-final", colors)
+        # print("done")
 
     def _plot(self, res, known_objects, target, figname, colors):
         fig, ax = plt.subplots()

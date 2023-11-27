@@ -1,3 +1,4 @@
+import math
 import os
 import json
 import pandas
@@ -59,10 +60,14 @@ class TrainingSRG(SRG):
 
     def update_weights(self, obj1, obj2, distance):
         mean, var, n = self._srg.get(obj1).get(obj2)
-        print("old mean", mean, "old var", var, "distance", distance)
+
+        if math.isnan(distance):
+            return
+
+        # print("old mean", mean, "old var", var, "distance", distance)
         var = (n / (n + 1)) * (var + (((mean - distance) ** 2) / n + 1))
         mean = ((mean * n) + distance) / (n + 1)
-        print("new mean", mean, "new var", var)
+        # print("new mean", mean, "new var", var)
         srg = self._srg
         obj1_dict = srg.get(obj1)
         obj1_dict.update({obj2: (mean, var, n + 1)})
