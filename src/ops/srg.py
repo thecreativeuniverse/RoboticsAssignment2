@@ -13,21 +13,21 @@ class SRG:
             df = pandas.read_csv(os.path.join(current_file, '../mapping/ObjectList.csv'))
             objects = df.Item.to_list()
             self._srg = {}
-            dist, var, n = 100, 50, 1
+            dist, var, n = 5, 2, 1
             for obj in objects:
                 object_dict = {}
                 for temp in objects:
                     if temp == obj:
-                        object_dict.update({temp: (0, 50, 0)})
+                        object_dict.update({temp: (0, 10, 0)})
                     elif temp in self._srg:
                         object_dict.update({temp: self._srg.get(temp).get(obj)})
                     else:
                         object_dict.update({temp: (dist, var, n)})
                 self._srg.update({obj: object_dict})
-            self.save_in_file()
         else:
             try:
-                file = open(filename, "r")
+                path = os.path.dirname(__file__)
+                file = open(os.path.join(path, filename), "r")
                 self._srg = json.load(file)
             except IOError:
                 "Error: Could not find file"
@@ -55,8 +55,8 @@ class SRG:
 
 class TrainingSRG(SRG):
 
-    def __init__(self):
-        SRG.__init__(self)
+    def __init__(self, filename=None):
+        SRG.__init__(self, filename=filename)
 
     def update_weights(self, obj1, obj2, distance):
         mean, var, n = self._srg.get(obj1).get(obj2)
@@ -64,10 +64,8 @@ class TrainingSRG(SRG):
         if math.isnan(distance):
             return
 
-        # print("old mean", mean, "old var", var, "distance", distance)
         var = (n / (n + 1)) * (var + (((mean - distance) ** 2) / n + 1))
         mean = ((mean * n) + distance) / (n + 1)
-        # print("new mean", mean, "new var", var)
         srg = self._srg
         obj1_dict = srg.get(obj1)
         obj1_dict.update({obj2: (mean, var, n + 1)})

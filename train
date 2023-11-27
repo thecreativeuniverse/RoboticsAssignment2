@@ -1,0 +1,10 @@
+#!/bin/bash
+
+catkin_make
+pip install -r requirements.txt
+python3 src/mapping/mapping.py
+
+for _ in 1 2 .. 10
+do
+  roslaunch main train.launch 2> >(grep -v TF_REPEATED_DATA buffer_core)
+done
