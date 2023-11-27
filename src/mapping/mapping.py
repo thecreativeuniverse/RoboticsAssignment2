@@ -44,7 +44,6 @@ while containsErrors:
     placedRooms, doors= generateCorners(room_objects,ensuite)
 
     containsErrors = errorChecker(placedRooms)
-    print(containsErrors)
 
 
 for room in placedRooms:

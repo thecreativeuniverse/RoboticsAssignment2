@@ -84,11 +84,9 @@ def checkOverlap(tortoise,corners1, corners2):
     for corner in corners1:
 
         coords = corner.coords
-        print((coords[0],coords[1]*-1),(lower_x,-1*lower_y),(upper_x,-1*upper_y))
         if lower_x < coords[0] < upper_x and lower_y*-1 < coords[1]*-1 < upper_y*-1:
             if (round(lower_x, 3) < round(coords[0], 3) < round(upper_x, 3) and
                     round(lower_y * -1, 3) < round(coords[1] * -1, 3) < round(upper_y * -1, 3)):
-                print("overlap")
                 tortoise.drawOverlap(corner)
                 tortoise.t.pencolor("black")
                 tortoise.t.penup()
@@ -99,10 +97,6 @@ def checkOverlap(tortoise,corners1, corners2):
 
                 overlap = True
                 break
-            else:
-                print("no overlap")
-        else:
-            print("no overlap")
 
     # check if corners1 are in corners2
     return overlap
