@@ -153,7 +153,7 @@ class SVOD():
         rospy.init_node('known_objects', anonymous=True)
         rospy.Subscriber('/odom', Odometry, self.odomCallback)
 
-        rospy.Subscriber('base_scan', LaserScan, self.lsCallback)
+        rospy.Subscriber('base_scan', LaserScan, self.lsCallback,queue_size=1)
         rospy.spin()
 
 

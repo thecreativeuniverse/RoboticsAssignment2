@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 import rospy
 import random
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Pose
 from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import Odometry
+from tf.msg import tfMessage
 # from geometry_msgs import TransformStamped
 import time
 
 odomRecent = []
 cmdPub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
+odomPub = rospy.Publisher("estimated_pose", Odometry, queue_size=1)
 
 
 def callback(msg):
@@ -38,7 +40,7 @@ def callback(msg):
         cmdPub.publish(base_data)
         rospy.sleep(0.1)
         base_data.linear.x = 0
-        base_data.angular.z = 0.5
+        base_data.angular.z = 0.75
         cmdPub.publish(base_data)
         rospy.sleep(0.1)
 
@@ -55,8 +57,8 @@ def callback(msg):
         base_data.linear.x = 0.5
         base_data.angular.z += (random.random() * 0.5) - 0.25
 
-    elif (abs(odomRecent[0].position.x - odomRecent[1].position.x) <= 0.01) & (
-            abs(odomRecent[0].position.y - odomRecent[1].position.y) <= 0.01):
+    elif (abs(odomRecent[0].pose.pose.position.x - odomRecent[1].pose.pose.position.x) <= 0.01) & (
+            abs(odomRecent[0].pose.pose.position.y - odomRecent[1].pose.pose.position.y) <= 0.01):
         base_data.linear.x = -0.5
         base_data.angular.z += (random.random() * 0.5) - 0.25
 
@@ -68,22 +70,35 @@ def callback(msg):
 
 def odom_callback(msg):
     if len(odomRecent) < 5:
-        odomRecent.append(msg.pose.pose)
+        odomRecent.append(msg)
     else:
         odomRecent.pop(0)
-        odomRecent.append(msg.pose.pose)
+        odomRecent.append(msg)
 
 
-def tf_callback():
-    print("Here")
+def tf_callback(msg):
+    odom = odomRecent[0]
+    translation = msg.transforms[0].transform.translation
+    rotation = msg.transforms[0].transform.rotation
+
+    odom.pose.pose.position.x += translation.x
+    odom.pose.pose.position.y += translation.y
+    odom.pose.pose.position.z += translation.z
+
+    odom.pose.pose.orientation.w += rotation.w
+    odom.pose.pose.orientation.x += rotation.x
+    odom.pose.pose.orientation.y += rotation.y
+    odom.pose.pose.orientation.z += rotation.z
+
+    odomPub.publish(odom)
+
 
 
 def listener():
     rospy.init_node("Navigation", anonymous=True)
     rospy.Subscriber('proximity_sensor', Float64MultiArray, callback)
     rospy.Subscriber('odom', Odometry, odom_callback)
-    # rospy.Subscriber('tf', TransformStamped, tf_callback)
-    odomPub = rospy.Publisher("estimated_pose", Odometry, queue_size=10)
+    rospy.Subscriber('tf', tfMessage, tf_callback)
 
     rospy.spin()
 
