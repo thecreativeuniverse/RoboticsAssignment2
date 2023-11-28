@@ -23,7 +23,7 @@ def calculate_likelihoods(simple_map=None, target=None, srg=None, known_obj_locs
     for obj, (x, y) in known_obj_locs:
         mean, var, _ = known_dists.get(obj)
         distributions.append(((x, y), mean, var))
-    map_size = round(len(simple_map[0]) / 20)
+    map_size = round(len(simple_map[0]) / 2)
     for x in range(-map_size, map_size):
         for y in range(-map_size, map_size):
             prob_z = get_prob(x, y, distributions)

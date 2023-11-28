@@ -1,6 +1,13 @@
 #!/bin/bash
 
-sleep 80 # TODO FIXME
+if [ "$1" -gt "-1" ]
+  then
+    sleep_time="$1"
+  else
+    sleep_time=100
+fi
+
+sleep $sleep_time
 
 pid=$(pgrep roslaunch)
 kill -INT $pid

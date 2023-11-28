@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ "$1" -gt "-1" ]
+  then
+    num_episodes="$1"
+  else
+    num_episodes=10
+fi
+
+
+catkin_make
+pip install -r requirements.txt
+
+echo "Running $num_episodes episodes."
+
+for ((i=1;i<=num_episodes;i++)); do
+  python3 src/mapping/mapping.py
+  roslaunch main episode.launch 2> >(grep -v TF_REPEATED_DATA buffer_core)
+done

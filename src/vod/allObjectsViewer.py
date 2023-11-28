@@ -60,7 +60,7 @@ if __name__ == '__main__':
         obj, x, y = eval(line)
         if obj != target_obj:
             continue
-        target_obj_locs.append((x,y))
+        target_obj_locs.append((x, y))
     # publish
     pointcloud_publisher.publish(itemPointcloud)
 
