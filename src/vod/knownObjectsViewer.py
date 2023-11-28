@@ -28,7 +28,6 @@ class KnownThings():
 
         known_objects = eval(msg.data)
         self.known_objects = known_objects
-        # print(known_objects)
         for obj, (x, y) in known_objects:
             pointcloud.points.append(Point32(x / 20, y / 20, 0.0))
 

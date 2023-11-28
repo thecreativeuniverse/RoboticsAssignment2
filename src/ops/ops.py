@@ -8,11 +8,15 @@ import numpy as np
 from srg import SRG, TrainingSRG
 import object_locator
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+import time
+import sys
+import subprocess
+import signal
+import psutil
 
 
 class OPS:
-    def __init__(self):
+    def __init__(self, train=False, filename=None):
         # initialising functions/variables
         rospy.Subscriber("target_object", String, self.target_object_callback)  # name
         rospy.Subscriber("map", OccupancyGrid,
@@ -27,7 +31,8 @@ class OPS:
         self.target_object = None
 
         # SRG
-        self.srg = SRG()
+        # TODO pass file into SRG()
+        self.srg = TrainingSRG(filename=filename) if train else SRG(filename=filename) # Change depending on training
         # {"thing":{"thing2":2, "thing3":5}, "thing2":{"thing":2,"thing3":10}, "thing3":{"thing":5,"thing2":10}}
 
         self.simple_map_radius = 250
@@ -48,9 +53,12 @@ class OPS:
         self.particle_cloud.points = [self.generate_pose() for _ in range(self.pose_array_size)]
 
         self.particle_cloud_pub.publish(self.particle_cloud)
-        print("")
 
         self.ALREADY_CALCULATING = False
+
+        if train:
+            time.sleep(5)
+            self.train()
 
     def simple_map_callback(self, simple_map):
         self.simple_map = simple_map.data
@@ -110,13 +118,11 @@ class OPS:
     def update_particle_cloud(self):
         self.particle_cloud_pub.publish(self.particle_cloud)
         if not self._validate_subbed_vars():
-            "invalid"
             return
         if self.ALREADY_CALCULATING:
             return
         self.ALREADY_CALCULATING = True
 
-        print("valid")
         # Get current poses
         initial_particles = self.particle_cloud.points
 
@@ -215,25 +221,18 @@ class OPS:
             current_threshold += tick_size
 
         # update the particle cloud to have the new particles
-        print("particles to keep", particles_to_keep)
         self.particle_cloud.points = particles_kept
         self.particle_cloud_pub.publish(self.particle_cloud)
         self.ALREADY_CALCULATING = False
 
     def train(self):
-
-        target = "oven"
-
-        print(self.srg.get_target_distribution(target))
-
-        solid_known_objects = [("kettle", (-150, 150)), ("toaster", (-200, 180)), ("oven", (-200, -150)),
-                               ("cushion", (80, -200)), ("sofa", (70, 100)), ("bed", (50, -76))]
+        solid_known_objects = self.known_objects
         simple_map = self.simple_map
 
-        colors = {}
+        print(solid_known_objects)
 
-        res = object_locator.calculate_likelihoods(simple_map, target, self.srg, solid_known_objects)
-        colors = self._plot(res, solid_known_objects, target, f"train-first", colors)
+        if solid_known_objects == None:
+            return
 
         for i in range(10):
             known_objects = []
@@ -243,26 +242,21 @@ class OPS:
                 known_objects.append((obj, (x, y)))
 
             estimated = known_objects.copy()
-            del estimated[2]
-            res = object_locator.calculate_likelihoods(simple_map, target, self.srg, estimated)
-            colors = self._plot(res, solid_known_objects, target, f"train-{i}", colors)
-            for j in range(len(known_objects)):
-                obj1, (x1, y1) = known_objects[j]
-                for k in range(j + 1, len(known_objects)):
-                    obj2, (x2, y2) = known_objects[k]
-                    distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+            for obj1, (x1, y1) in known_objects:
+                for obj2, (x2, y2) in known_objects:
+                    distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2 ** 2))
                     self.srg.update_weights(obj1, obj2, distance)
-            print(f"Iteration {i} done")
+        self.srg.save_in_file()
 
-        known_objects = []
-        for obj, (x, y) in solid_known_objects:
-            x += np.random.normal(scale=50)
-            y += np.random.normal(scale=50)
-            known_objects.append((obj, (x, y)))
+        # TODO shutdown not working. need to figure out how to do this
+        matching_processes = [proc for proc in psutil.process_iter(['name']) if proc.info['name'] in ['python3', 'rviz', 'slam_gm+', 'stageros']]
 
-        res = object_locator.calculate_likelihoods(simple_map, target, self.srg, solid_known_objects)
-        self._plot(res, solid_known_objects, target, f"train-final", colors)
-        print("done")
+        print(matching_processes)
+        for proc in matching_processes:
+            proc.kill()
+
+        exit(0)
+
 
     def _plot(self, res, known_objects, target, figname, colors):
         fig, ax = plt.subplots()
@@ -278,19 +272,6 @@ class OPS:
         highest_prob_coords = (x[highest_prob_index], y[highest_prob_index])
 
         ax.scatter(x, y, c=z, cmap='cool', marker='.')
-
-        # ax.plot(highest_prob_coords[0], highest_prob_coords[1], 'k.', markersize=5)
-
-        # for name, (x, y) in known_objects:
-        #     if name not in colors:
-        #         col = np.random.random(3, )
-        #         colors.update({name: col})
-        #     else:
-        #         col = colors.get(name)
-        #     ax.plot(x, y, color=col, marker='.' if name == target else 'x', label=name)
-            # circle = patches.Circle((x, y), radius=self.srg.get_distance(name, target), facecolor='none',
-            #                         edgecolor=col)
-            # ax.add_patch(circle)
 
         ax.legend()
         ax.axis('equal')
@@ -317,8 +298,9 @@ class OPS:
 
 
 if __name__ == '__main__':
+    train = '--train' in sys.argv
     rospy.init_node('ops', anonymous=True)
-    ops_locator = OPS()
+    ops_locator = OPS(train=train, filename="out/srg.json")
     rospy.spin()
     # debugging - not for main use
     # known_objs = [('bed', (43, -8)), ('coffee table', (44, -6)), ('bedside table', (85, -29)), ('mirror', (56, -22)),

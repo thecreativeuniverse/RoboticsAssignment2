@@ -17,21 +17,13 @@ def get_prob(current_x, current_y, known_dists):
 
 # Generate probs
 def calculate_likelihoods(simple_map=None, target=None, srg=None, known_obj_locs=None):
-    print("Caluclaing likelihoods")
     res = []
     known_dists = srg.get_target_distribution(target)
-    print("known locs", known_obj_locs)
     distributions = []
     for obj, (x, y) in known_obj_locs:
-        # if obj == target:
-        #     print("obj is target")
-        #     continue
         mean, var, _ = known_dists.get(obj)
-        print(f"{obj}, {target}, {mean}")
         distributions.append(((x, y), mean, var))
-    print("dists", known_obj_locs)
     map_size = round(len(simple_map[0]) / (2 * 20))
-    print("map size", map_size)
     for x in range(-map_size, map_size):
         for y in range(-map_size, map_size):
             prob_z = get_prob(x, y, distributions)
