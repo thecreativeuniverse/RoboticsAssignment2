@@ -41,7 +41,7 @@ class SVOD():
         self.lines = file1.readlines()
 
         self.foundObjects = []
-        self.allObjects =[]
+        self.allObjects = []
         self.itemLists = []
         self.itemListNames = []
 
@@ -54,10 +54,10 @@ class SVOD():
             self.itemLists.append([[x_coord, y_coord]])
 
     def doKmeans(self):
-        self.foundObjects =[]
+        self.foundObjects = []
         for i in range(len(self.itemListNames)):
             centers = generate_centers(self.itemLists[i])
-            self.itemLists[i] =[]
+            self.itemLists[i] = []
             for coords in centers:
                 if tuple(coords)[0] != 300:
                     self.foundObjects.append((self.itemListNames[i], tuple(coords)))
@@ -88,9 +88,13 @@ class SVOD():
         euler = euler_from_quaternion(quat)
         degrees = 360 - (270 + ((180 * euler[2]) / math.pi)) % 360
         self.current_location = (pos[0], pos[1], degrees)
-        self.estimated_location = (pos[0] + self.addPositionNoise(),
-                                   pos[1] + self.addPositionNoise(),
-                                   degrees + self.addPositionNoise())
+
+    def estimate_callback(self, msg):
+        pos = [msg.pose.pose.position.x * 20, msg.pose.pose.position.y * 20]
+        quat = (0, 0, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
+        euler = euler_from_quaternion(quat)
+        degrees = 360 - (270 + ((180 * euler[2]) / math.pi)) % 360
+        self.estimated_location = (pos[0], pos[1], degrees)
 
     def lsCallback(self, msg):
         (current_x, current_y, current_theta) = copy.deepcopy(self.current_location)
@@ -114,9 +118,7 @@ class SVOD():
                             pass
                     if not exists:
                         # estimate new coords
-                        item_pos_x, item_pos_y = self.generateItemCoords(estimate_x, estimate_y,
-                                                                         (angle + self.addRotationNoise()) % 360,
-                                                                         distance)
+                        item_pos_x, item_pos_y = self.generateItemCoords(estimate_x, estimate_y, angle % 360, distance)
                         self.allObjects.append((obj, (item_pos_x, item_pos_y)))
                         self.generateItemLists((obj, item_pos_x, item_pos_y))
 
@@ -146,14 +148,13 @@ class SVOD():
         all_objects_pointcloud.header = header
         for data in self.allObjects:
             all_objects_pointcloud.points.append(Point32(data[1][0] / 20, data[1][1] / 20, 0))
-
         self.unclustered_obj.publish(all_objects_pointcloud)
 
-    def listener(self, ):
+    def listener(self):
         rospy.init_node('known_objects', anonymous=True)
         rospy.Subscriber('/odom', Odometry, self.odomCallback)
-
-        rospy.Subscriber('base_scan', LaserScan, self.lsCallback,queue_size=1)
+        rospy.Subscriber('base_scan', LaserScan, self.lsCallback, queue_size=1)
+        rospy.Subscriber('/estimated_pose', Odometry, self.estimate_callback)
         rospy.spin()
 
 

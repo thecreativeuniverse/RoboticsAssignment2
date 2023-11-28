@@ -7,6 +7,9 @@ class PogTurtle:
         self.t = SvgTurtle(1000, 1000)
         self.t.hideturtle()
         self.t.speed(0)
+        self.startup()
+
+    def startup(self):
         self.t.pencolor("pink")
         for _ in range(4):
             self.t.forward(500)
@@ -33,8 +36,10 @@ class PogTurtle:
             self.t.setposition(corners[len(corners) - corner_index - 1][0] * 20,
                                corners[len(corners) - corner_index - 1][1] * -20)
 
-        mid_x = round((corners[0][0] + corners[2][0]) / 2)
-        mid_y = round((corners[0][1] + corners[2][1]) / 2)
+
+        mid_x = (corners[1][0] + corners[3][0]) / 2
+        mid_y = (corners[1][1] + corners[3][1]) / 2
+        print(corners[3],corners[1],(mid_x,mid_y))
         self.t.penup()
         self.t.setposition(mid_x * 20, mid_y * -20)
         self.t.pendown()

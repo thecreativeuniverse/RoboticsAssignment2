@@ -41,6 +41,7 @@ def generate_maps():
     containsErrors = True
     while containsErrors:
         tortoise.t.clear()
+        tortoise.startup()
         rooms, ensuite = generateInitialRooms()
         room_objects = generateRoomObjects(rooms)
 
