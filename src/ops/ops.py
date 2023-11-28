@@ -77,7 +77,19 @@ class OPS:
         self.target_object = target_object.data
         self.update_particle_cloud()
 
-    # def calculate_long_term_goal(self):
+    def calculate_long_term_goal(self, known_object_locations=None):
+        particles_weights = [object_locator.get_weight(particle, self.target_object, self.srg, known_object_locations) for
+                             particle in
+                             self.particle_cloud.points]
+        index = particles_weights.index(max(particles_weights))
+        estimated_pos = self.particle_cloud.points[index]
+
+        goal_pointcloud = PointCloud()
+        goal_pointcloud.header.frame_id = "map"
+        goal_pointcloud.header.stamp = rospy.Time.now()
+        goal_pointcloud.points = [estimated_pos]
+
+        self.goal_pos_pub.publish(goal_pointcloud)
     #     if not self._validate_subbed_vars():
     #         "invalid"
     #         return
@@ -242,6 +254,7 @@ class OPS:
         self.particle_cloud.points = particles_kept
         self.particle_cloud_pub.publish(self.particle_cloud)
         self.ALREADY_CALCULATING = False
+        self.calculate_long_term_goal(known_object_locations=known_object_locations)
 
     def train(self):
         known_objects = self.known_objects
