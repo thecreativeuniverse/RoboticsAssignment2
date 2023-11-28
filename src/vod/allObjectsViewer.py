@@ -51,10 +51,16 @@ if __name__ == '__main__':
         data = data.split(",")
         itemPointcloud.points.append(Point32((float(data[1]) - 250) / 20, -1 * ((float(data[2]) - 250) / 20), 0.0))
 
-    target_obj, x, y = eval(lines[np.random.randint(0, high=len(lines))])
+    target_obj, _, _ = eval(lines[np.random.randint(0, high=len(lines))])
     target_obj_publisher.publish(std_msgs.msg.String(target_obj))
     print("target obj ", target_obj)  # debugging
 
+    target_obj_locs = []
+    for line in lines:
+        obj, x, y = eval(line)
+        if obj != target_obj:
+            continue
+        target_obj_locs.append((x,y))
     # publish
     pointcloud_publisher.publish(itemPointcloud)
 
@@ -65,7 +71,8 @@ if __name__ == '__main__':
     header.stamp = rospy.Time.now()
     header.frame_id = 'map'
     target_pointcloud.header = header
-    target_pointcloud.points.append(Point32((x - 250) / 20, (-y + 250) / 20, 0.0))
+    for x, y in target_obj_locs:
+        target_pointcloud.points.append(Point32((x - 250) / 20, (-y + 250) / 20, 0.0))
 
     time.sleep(5)
     target_obj_pub.publish(target_pointcloud)
