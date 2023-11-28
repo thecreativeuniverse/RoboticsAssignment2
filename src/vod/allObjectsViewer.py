@@ -9,6 +9,18 @@ import std_msgs.msg
 import time
 import numpy as np
 
+
+def target_obj_callback(self, msg):
+    self.target_obj = msg.data
+    self.publish_target_obj()
+
+
+def publish_target_obj():
+    target_obj = [x for x in self.known_objects if x[0] == self.target_obj]
+    if len(target_obj) == 0:
+        return
+
+
 if __name__ == '__main__':
     '''
     Publishes example pointcloud
@@ -16,6 +28,7 @@ if __name__ == '__main__':
     rospy.init_node('point_polygon_scaler')
     pointcloud_publisher = rospy.Publisher("/my_pointcloud_topic", PointCloud, queue_size=10)
     target_obj_publisher = rospy.Publisher("/target_object", std_msgs.msg.String, queue_size=10)
+    target_obj_pub = rospy.Publisher("/target_obj_loc", PointCloud, queue_size=1)
 
     rospy.loginfo("pcl_publish_example")
     # giving some time for the publisher to register
@@ -44,5 +57,15 @@ if __name__ == '__main__':
 
     # publish
     pointcloud_publisher.publish(itemPointcloud)
-    rospy.spin()
-        # time.sleep(1)
+
+    # declaring pointcloud
+    target_pointcloud = PointCloud()
+    # filling pointcloud header
+    header = std_msgs.msg.Header()
+    header.stamp = rospy.Time.now()
+    header.frame_id = 'map'
+    target_pointcloud.header = header
+    target_pointcloud.points.append(Point32((x - 250) / 20, (-y + 250) / 20, 0.0))
+
+    time.sleep(5)
+    target_obj_pub.publish(target_pointcloud)
