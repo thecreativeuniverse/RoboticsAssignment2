@@ -119,7 +119,7 @@ class SVOD():
                     if not exists:
                         # estimate new coords
                         # FIXME
-                        item_pos_x, item_pos_y = self.generateItemCoords(current_x, current_y, angle % 360, distance)
+                        item_pos_x, item_pos_y = self.generateItemCoords(pos_x, pos_y, angle % 360, distance)
                         self.allObjects.append((obj, (item_pos_x, item_pos_y)))
                         self.generateItemLists((obj, item_pos_x, item_pos_y))
 
