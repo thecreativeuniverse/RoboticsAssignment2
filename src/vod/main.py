@@ -46,7 +46,7 @@ class SVOD():
         self.itemListNames = []
 
     def generateItemLists(self, item):
-        self.foundObjects =[]
+        print(len(self.allObjects))
         name, x_coord, y_coord = item
         if name in self.itemListNames:
             self.itemLists[self.itemListNames.index(item[0])].append([x_coord, y_coord])
@@ -54,10 +54,14 @@ class SVOD():
             self.itemListNames.append(name)
             self.itemLists.append([[x_coord, y_coord]])
 
+    def doKmeans(self):
+        self.foundObjects =[]
         for i in range(len(self.itemListNames)):
+            print("doing k means for cluster ",self.itemListNames[i]," with size of: ",len(self.itemLists[i]))
             centers = generate_centers(self.itemLists[i])
             for coords in centers:
-                self.foundObjects.append((self.itemListNames[i], tuple(coords)))
+                if tuple(coords)[0] != 300:
+                    self.foundObjects.append((self.itemListNames[i], tuple(coords)))
 
     def bearing(self, x1, y1, x2, y2):
         rad2deg = 57.2957795130823209
@@ -89,6 +93,7 @@ class SVOD():
                                    degrees + self.addPositionNoise())
 
     def lsCallback(self, msg):
+        print("start")
         (current_x, current_y, current_theta) = copy.deepcopy(self.current_location)
         (estimate_x, estimate_y, estimate_theta) = copy.deepcopy(self.estimated_location)
         for item in self.lines:
@@ -115,8 +120,13 @@ class SVOD():
                                                                          distance)
                         self.allObjects.append((obj, (item_pos_x, item_pos_y)))
                         self.generateItemLists((obj, item_pos_x, item_pos_y))
+
+        self.doKmeans()
+        stuff = String(str(self.foundObjects))
+        self.clustered_obj.publish(stuff)
+        ###########################
+        # robot position and laserscan pointcloud
         robot_pos = PointCloud()
-        # filling pointcloud header
         header = std_msgs.msg.Header()
         header.stamp = rospy.Time.now()
         header.frame_id = 'map'
@@ -139,8 +149,8 @@ class SVOD():
             all_objects_pointcloud.points.append(Point32(data[1][0] / 20, data[1][1] / 20, 0))
 
         self.unclustered_obj.publish(all_objects_pointcloud)
-        stuff = String(str(self.foundObjects))
-        self.clustered_obj.publish(stuff)
+        print("end")
+
 
     def listener(self, ):
         rospy.init_node('known_objects', anonymous=True)
