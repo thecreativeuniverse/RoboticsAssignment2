@@ -57,7 +57,7 @@ class OPS:
         self.ALREADY_CALCULATING = False
 
         if train:
-            time.sleep(5)
+            time.sleep(60)
             self.train()
 
     def simple_map_callback(self, simple_map):
@@ -76,44 +76,44 @@ class OPS:
         self.target_object = target_object.data
         self.update_particle_cloud()
 
-    def calculate_long_term_goal(self):
-        if not self._validate_subbed_vars():
-            "invalid"
-            return
-        if self.ALREADY_CALCULATING:
-            return
-
-        self.ALREADY_CALCULATING = True
-
-        data = np.array(self.simple_map)
-        size = int(np.sqrt(len(data)))
-        simple_map = np.split(data, size)
-
-        known_objects = self.known_objects
-        print(f"we know {len(known_objects)} objects and are looking for {self.target_object}")
-
-        srg = self.srg
-        known_object_locations = []
-
-        for obj in known_objects:
-            distance = srg.get_distance(obj[0], self.target_object)
-            known_object_locations.append((obj[1], distance, 50))
-
-        res = object_locator.calculate_likelihoods(simple_map=simple_map, target=self.target_object, srg=srg,
-                                                   known_obj_locs=known_object_locations)
-
-        (x, y, prob) = max(res, key=lambda val: val[-1])
-
-        target_pointcloud = PointCloud()
-        # filling pointcloud header
-        header = Header()
-        header.stamp = rospy.Time.now()
-        header.frame_id = 'map'
-        target_pointcloud.header = header
-        target_pointcloud.points.append(Point32(x / 20, y / 20, 0))
-
-        self.goal_pos_pub.publish(target_pointcloud)
-        self.ALREADY_CALCULATING = False
+    # def calculate_long_term_goal(self):
+    #     if not self._validate_subbed_vars():
+    #         "invalid"
+    #         return
+    #     if self.ALREADY_CALCULATING:
+    #         return
+    #
+    #     self.ALREADY_CALCULATING = True
+    #
+    #     data = np.array(self.simple_map)
+    #     size = int(np.sqrt(len(data)))
+    #     simple_map = np.split(data, size)
+    #
+    #     known_objects = self.known_objects
+    #     print(f"we know {len(known_objects)} objects and are looking for {self.target_object}")
+    #
+    #     srg = self.srg
+    #     known_object_locations = []
+    #
+    #     for obj in known_objects:
+    #         distance = srg.get_distance(obj[0], self.target_object)
+    #         known_object_locations.append((obj[1], distance, 50))
+    #
+    #     res = object_locator.calculate_likelihoods(simple_map=simple_map, target=self.target_object, srg=srg,
+    #                                                known_obj_locs=known_object_locations)
+    #
+    #     (x, y, prob) = max(res, key=lambda val: val[-1])
+    #
+    #     target_pointcloud = PointCloud()
+    #     # filling pointcloud header
+    #     header = Header()
+    #     header.stamp = rospy.Time.now()
+    #     header.frame_id = 'map'
+    #     target_pointcloud.header = header
+    #     target_pointcloud.points.append(Point32(x / 20, y / 20, 0))
+    #
+    #     self.goal_pos_pub.publish(target_pointcloud)
+    #     self.ALREADY_CALCULATING = False
 
     def update_particle_cloud(self):
         self.particle_cloud_pub.publish(self.particle_cloud)
@@ -226,36 +226,19 @@ class OPS:
         self.ALREADY_CALCULATING = False
 
     def train(self):
-        solid_known_objects = self.known_objects
+        known_objects = self.known_objects
         simple_map = self.simple_map
 
-        print(solid_known_objects)
-
-        if solid_known_objects == None:
+        if known_objects is None:
             return
 
-        for i in range(10):
-            known_objects = []
-            for obj, (x, y) in solid_known_objects:
-                x += np.random.normal(scale=25)
-                y += np.random.normal(scale=25)
-                known_objects.append((obj, (x, y)))
-
-            estimated = known_objects.copy()
-            for obj1, (x1, y1) in known_objects:
-                for obj2, (x2, y2) in known_objects:
-                    distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2 ** 2))
-                    self.srg.update_weights(obj1, obj2, distance)
+        for obj1, (x1, y1) in known_objects:
+            for obj2, (x2, y2) in known_objects:
+                if obj1 == obj2:
+                    continue
+                distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2 ** 2))
+                self.srg.update_weights(obj1, obj2, distance)
         self.srg.save_in_file()
-
-        # TODO shutdown not working. need to figure out how to do this
-        matching_processes = [proc for proc in psutil.process_iter(['name']) if proc.info['name'] in ['python3', 'rviz', 'slam_gm+', 'stageros']]
-
-        print(matching_processes)
-        for proc in matching_processes:
-            proc.kill()
-
-        exit(0)
 
 
     def _plot(self, res, known_objects, target, figname, colors):

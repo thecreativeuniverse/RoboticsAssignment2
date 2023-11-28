@@ -20,7 +20,8 @@
     <node name="svodall" pkg="vod" output="screen" type="allObjectsViewer.py" launch-prefix="bash -c 'sleep 1; $0 $@' "/>
     <node name="svodknown" pkg="vod" output="screen" type="knownObjectsViewer.py" />
 
-    <node name="wall_hugger_nav" pkg="wall_hugger" type="navigation2.py" />
-    <node name="wall_hugger_laser" pkg="wall_hugger" type="laserReader.py" />
+<!--     <node name="wall_hugger_nav" pkg="wall_hugger" type="navigation2.py" /> -->
+<!--     <node name="wall_hugger_laser" pkg="wall_hugger" type="laserReader.py" /> -->
 
+    <node name="stop_train" pkg="main" type="stop" />
 </launch>

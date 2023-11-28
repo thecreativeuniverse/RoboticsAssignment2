@@ -1,0 +1,6 @@
+#!/bin/bash
+
+sleep 80 # TODO FIXME
+
+pid=$(pgrep roslaunch)
+kill -INT $pid

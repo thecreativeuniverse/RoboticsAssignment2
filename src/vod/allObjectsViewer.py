@@ -30,8 +30,8 @@ if __name__ == '__main__':
     # filling some points
     path = os.path.dirname(__file__)
     path = os.path.join(path, "../mapping/out/itemList.txt")
-    file1 = open(path, 'r')
-    lines = file1.readlines()
+    with open(path, 'r') as file1:
+        lines = file1.readlines()
 
     for item in lines:
         data = item[1:-2]
