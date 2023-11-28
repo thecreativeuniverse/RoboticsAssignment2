@@ -1,3 +1,4 @@
+import copy
 import random
 
 from pgmGenerator import PGM
@@ -45,9 +46,11 @@ def generate_maps():
         rooms, ensuite = generateInitialRooms()
         room_objects = generateRoomObjects(rooms)
 
-        placedRooms, doors= generateCorners(room_objects,ensuite)
+        placedRooms, doors= generateCorners(copy.deepcopy(room_objects),ensuite)
 
         containsErrors = errorChecker(placedRooms, tortoise)
+        if len(room_objects) !=len(placedRooms):
+            containsErrors = True
 
 
     for room in placedRooms:

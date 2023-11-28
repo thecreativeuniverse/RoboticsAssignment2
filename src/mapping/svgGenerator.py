@@ -39,7 +39,6 @@ class PogTurtle:
 
         mid_x = (corners[1][0] + corners[3][0]) / 2
         mid_y = (corners[1][1] + corners[3][1]) / 2
-        print(corners[3],corners[1],(mid_x,mid_y))
         self.t.penup()
         self.t.setposition(mid_x * 20, mid_y * -20)
         self.t.pendown()
