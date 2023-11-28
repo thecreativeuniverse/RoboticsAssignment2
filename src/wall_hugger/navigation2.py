@@ -13,6 +13,7 @@ odomRecent = []
 cmdPub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
 odomPub = rospy.Publisher("estimated_pose", PoseStamped, queue_size=1)
 
+
 def callback(msg):
     # Averages: right, middle right, middle, middle left, left
     averages = [msg.data[4], msg.data[5], msg.data[6], msg.data[7], msg.data[8]]
@@ -20,7 +21,7 @@ def callback(msg):
 
     # TODO: Subscribe to object count use this as a basis for when to switch to A* searching after meeting a threshold of the number of objects found
     # TODO: Prioritise entering nearby doorways.
-    
+
     if thresholdMet:
         discoveryAlgorithm(base_data, averages)
     else:
@@ -28,7 +29,7 @@ def callback(msg):
 
 
 def discoveryAlgorithm(base_data, averages):
-        # Crash recovery first
+    # Crash recovery first
     if averages[0] < 0.45 or averages[1] < 0.4 or averages[2] < 0.4:
         base_data.linear.x = -5
         cmdPub.publish(base_data)
@@ -62,13 +63,13 @@ def discoveryAlgorithm(base_data, averages):
     cmdPub.publish(base_data)
 
 
-def odom_callback(msg):
-    global odomRecent
-    if len(odomRecent) < 5:
-        odomRecent.append(msg)
-    else:
-        odomRecent.pop(0)
-        odomRecent.append(msg)
+# def odom_callback(msg):
+#     global odomRecent
+#     if len(odomRecent) < 5:
+#         odomRecent.append(msg)
+#     else:
+#         odomRecent.pop(0)
+#         odomRecent.append(msg)
 
 
 def tf_callback(msg):
@@ -78,7 +79,7 @@ def tf_callback(msg):
         return
 
     translation = msg.transforms[0].transform.translation
-    rotation = msg.transforms[0].transform.rotation 
+    rotation = msg.transforms[0].transform.rotation
 
     odom.pose.pose.position.x += translation.x
     odom.pose.pose.position.y += translation.y
@@ -97,14 +98,15 @@ def tf_callback(msg):
 
 
 def known_objects_callback(msg):
-    if (len(eval(msg.data)) >= objectThreshold):
+    if len(eval(msg.data)) >= objectThreshold:
         global thresholdMet
         thresholdMet = True
+
 
 def listener():
     rospy.init_node("Navigation", anonymous=True)
     rospy.Subscriber('proximity_sensor', Float64MultiArray, callback)
-    rospy.Subscriber('odom', Odometry, odom_callback)
+    # rospy.Subscriber('odom', Odometry, odom_callback)
     rospy.Subscriber('tf', tfMessage, tf_callback)
     rospy.Subscriber('known_objects', String, known_objects_callback)
 
