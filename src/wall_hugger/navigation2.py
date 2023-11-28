@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 import rospy
 import random
-from geometry_msgs.msg import Twist, PoseStamped, TransformStamped
+from geometry_msgs.msg import Twist, PoseStamped
 from std_msgs.msg import Float64MultiArray, String
 from nav_msgs.msg import Odometry
 from tf.msg import tfMessage
-from copy import copy
+from copy import deepcopy
 
 objectThreshold = 5
 thresholdMet = False
 odomRecent = []
 cmdPub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
 odomPub = rospy.Publisher("estimated_pose", PoseStamped, queue_size=1)
+
 
 def callback(msg):
     # Averages: right, middle right, middle, middle left, left
@@ -20,7 +21,7 @@ def callback(msg):
 
     # TODO: Subscribe to object count use this as a basis for when to switch to A* searching after meeting a threshold of the number of objects found
     # TODO: Prioritise entering nearby doorways.
-    
+
     if thresholdMet:
         discoveryAlgorithm(base_data, averages)
     else:
@@ -28,18 +29,18 @@ def callback(msg):
 
 
 def discoveryAlgorithm(base_data, averages):
-        # Crash recovery first
+    # Crash recovery first
     if averages[0] < 0.45 or averages[1] < 0.4 or averages[2] < 0.4:
-        base_data.linear.x = -5
+        base_data.linear.x = -1
         cmdPub.publish(base_data)
         rospy.sleep(0.1)
         base_data.linear.x = 0
-        base_data.angular.z = 0.75
+        base_data.angular.z = 0.5
         cmdPub.publish(base_data)
         rospy.sleep(0.1)
 
     elif averages[3] < 0.4 or averages[4] < 0.45:
-        base_data.linear.x = -5
+        base_data.linear.x = -1
         cmdPub.publish(base_data)
         rospy.sleep(0.1)
         base_data.linear.x = 0
@@ -72,13 +73,13 @@ def odom_callback(msg):
 
 
 def tf_callback(msg):
-    odom = copy(odomRecent[0])
+    odom = deepcopy(odomRecent[0])
 
     if (msg.transforms[0].child_frame_id != "odom" or msg.transforms[0].header.frame_id != "map"):
         return
 
     translation = msg.transforms[0].transform.translation
-    rotation = msg.transforms[0].transform.rotation 
+    rotation = msg.transforms[0].transform.rotation
 
     odom.pose.pose.position.x += translation.x
     odom.pose.pose.position.y += translation.y
@@ -97,9 +98,10 @@ def tf_callback(msg):
 
 
 def known_objects_callback(msg):
-    if (len(eval(msg.data)) >= objectThreshold):
+    if len(eval(msg.data)) >= objectThreshold:
         global thresholdMet
         thresholdMet = True
+
 
 def listener():
     rospy.init_node("Navigation", anonymous=True)
