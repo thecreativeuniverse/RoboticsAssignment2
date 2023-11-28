@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import rospy
 import random
-from geometry_msgs.msg import Twist, PoseStamped, TransformStamped
+from geometry_msgs.msg import Twist, PoseStamped
 from std_msgs.msg import Float64MultiArray, String
 from nav_msgs.msg import Odometry
 from tf.msg import tfMessage
-from copy import copy
+from copy import deepcopy
 
 objectThreshold = 5
 thresholdMet = False
@@ -31,16 +31,16 @@ def callback(msg):
 def discoveryAlgorithm(base_data, averages):
     # Crash recovery first
     if averages[0] < 0.45 or averages[1] < 0.4 or averages[2] < 0.4:
-        base_data.linear.x = -5
+        base_data.linear.x = -1
         cmdPub.publish(base_data)
         rospy.sleep(0.1)
         base_data.linear.x = 0
-        base_data.angular.z = 0.75
+        base_data.angular.z = 0.5
         cmdPub.publish(base_data)
         rospy.sleep(0.1)
 
     elif averages[3] < 0.4 or averages[4] < 0.45:
-        base_data.linear.x = -5
+        base_data.linear.x = -1
         cmdPub.publish(base_data)
         rospy.sleep(0.1)
         base_data.linear.x = 0
@@ -63,17 +63,17 @@ def discoveryAlgorithm(base_data, averages):
     cmdPub.publish(base_data)
 
 
-# def odom_callback(msg):
-#     global odomRecent
-#     if len(odomRecent) < 5:
-#         odomRecent.append(msg)
-#     else:
-#         odomRecent.pop(0)
-#         odomRecent.append(msg)
+def odom_callback(msg):
+    global odomRecent
+    if len(odomRecent) < 5:
+        odomRecent.append(msg)
+    else:
+        odomRecent.pop(0)
+        odomRecent.append(msg)
 
 
 def tf_callback(msg):
-    odom = copy(odomRecent[0])
+    odom = deepcopy(odomRecent[0])
 
     if (msg.transforms[0].child_frame_id != "odom" or msg.transforms[0].header.frame_id != "map"):
         return
@@ -106,7 +106,7 @@ def known_objects_callback(msg):
 def listener():
     rospy.init_node("Navigation", anonymous=True)
     rospy.Subscriber('proximity_sensor', Float64MultiArray, callback)
-    # rospy.Subscriber('odom', Odometry, odom_callback)
+    rospy.Subscriber('odom', Odometry, odom_callback)
     rospy.Subscriber('tf', tfMessage, tf_callback)
     rospy.Subscriber('known_objects', String, known_objects_callback)
 
