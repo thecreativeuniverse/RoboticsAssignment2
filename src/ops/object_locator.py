@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 def norm_pdf(x, mean=0, var=0.5):
-    multiplier = 10 if mean == 0 else 1
+    multiplier = 100 if mean == 0 else 1
     return (1 / np.sqrt(2 * np.pi * var)) * np.exp(-((x - mean) ** 2) / (2 * var)) * multiplier
 
 
@@ -34,5 +34,4 @@ def calculate_likelihoods(simple_map=None, target=None, srg=None, known_obj_locs
 
 
 def get_weight(particle=None, target=None, srg=None, known_obj_locs=None):
-    known_dists = srg.get_target_distribution(target)
     return get_prob(particle.x * 20, particle.y * 20, known_obj_locs)
