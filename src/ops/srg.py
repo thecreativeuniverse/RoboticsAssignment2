@@ -18,7 +18,7 @@ class SRG:
                 object_dict = {}
                 for temp in objects:
                     if temp == obj:
-                        object_dict.update({temp: (0, 10, 0)})
+                        object_dict.update({temp: (0, 1000, 1)})
                     elif temp in self._srg:
                         object_dict.update({temp: self._srg.get(temp).get(obj)})
                     else:
@@ -59,7 +59,6 @@ class TrainingSRG(SRG):
         SRG.__init__(self, filename=filename)
 
     def update_weights(self, obj1, obj2, distance):
-        print(f"{obj1} {obj2} ")
         mean, var, n = self._srg.get(obj1).get(obj2)
 
         if math.isnan(distance):

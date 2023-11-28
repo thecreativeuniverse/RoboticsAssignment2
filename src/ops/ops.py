@@ -8,6 +8,7 @@ import numpy as np
 from srg import SRG, TrainingSRG
 import object_locator
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import time
 import sys
 import subprocess
@@ -32,7 +33,7 @@ class OPS:
 
         # SRG
         # TODO pass file into SRG()
-        self.srg = TrainingSRG(filename=filename) if train else SRG(filename=filename) # Change depending on training
+        self.srg = TrainingSRG(filename=filename) if train else SRG(filename=filename)  # Change depending on training
         # {"thing":{"thing2":2, "thing3":5}, "thing2":{"thing":2,"thing3":10}, "thing3":{"thing":5,"thing2":10}}
 
         self.simple_map_radius = 250
@@ -202,6 +203,23 @@ class OPS:
         for i in range(1, self.pose_array_size):
             cum_weights.append(cum_weights[i - 1] + particles_weights[i])
 
+        # particles_to_remove = len(particles_weights) * 0.8
+        # while len(particles_weights) > particles_to_remove:
+        #     index = particles_weights.index((min(particles_weights)))
+        #     del (particles_weights[index])
+        #     del (initial_particles[index])
+        #
+        # while len(particles_weights) < particles_to_keep:
+        #     new_poses = []
+        #     for i in range(50):
+        #         new_pose = self.generate_pose()
+        #         new_weight = object_locator.get_weight(new_pose, self.target_object, srg, known_object_locations)
+        #         new_poses.append((new_pose, new_weight))
+        #     new_poses = sorted(new_poses, key=lambda x: x[1])
+        #
+        #     initial_particles.append(new_poses[-1][0])
+        #     particles_weights.append(new_poses[-1][1])
+
         # calculate the increment size and initial threshold
         tick_size = 1 / self.pose_array_size
         current_threshold = np.random.uniform(0, tick_size)
@@ -227,7 +245,6 @@ class OPS:
 
     def train(self):
         known_objects = self.known_objects
-        simple_map = self.simple_map
 
         if known_objects is None:
             return
@@ -236,10 +253,9 @@ class OPS:
             for obj2, (x2, y2) in known_objects:
                 if obj1 == obj2:
                     continue
-                distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2 ** 2))
+                distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
                 self.srg.update_weights(obj1, obj2, distance)
         self.srg.save_in_file()
-
 
     def _plot(self, res, known_objects, target, figname, colors):
         fig, ax = plt.subplots()
@@ -253,10 +269,23 @@ class OPS:
         highest_prob = max(z)
         highest_prob_index = z.index(highest_prob)
         highest_prob_coords = (x[highest_prob_index], y[highest_prob_index])
-
         ax.scatter(x, y, c=z, cmap='cool', marker='.')
 
-        ax.legend()
+        # ax.plot(highest_prob_coords[0], highest_prob_coords[1], 'k.', markersize=5)
+        #
+        # for name, (x, y) in known_objects:
+        #     if name not in colors:
+        #         col = np.random.random(3, )
+        #         colors.update({name: col})
+        #     else:
+        #         col = colors.get(name)
+        #     ax.plot(x, y, color=col, marker='.' if name == target else 'x', label=name)
+        #     circle = patches.Circle((x, y), radius=self.srg.get_distance(name, target), facecolor='none',
+        #                             edgecolor=col)
+        #     ax.add_patch(circle)
+        #
+        #
+        # ax.legend(bbox_to_anchor=(1,-1))
         ax.axis('equal')
         ax.set_xlim(-250, 250)
         ax.set_ylim(-250, 250)
@@ -269,9 +298,9 @@ class OPS:
 
     @staticmethod
     def generate_pose(pose=None, variance=0.0):
-        variance = 10  # FIXME
-        width = 500 / 20
-        height = 500 / 20
+        variance = 1
+        width = 250 / 20
+        height = 250 / 20
         if pose is not None:
             return Point32(pose.x + np.random.normal(0, variance),
                            pose.y + np.random.normal(0, variance),
@@ -285,20 +314,43 @@ if __name__ == '__main__':
     rospy.init_node('ops', anonymous=True)
     ops_locator = OPS(train=train, filename="out/srg.json")
     rospy.spin()
+
     # debugging - not for main use
-    # known_objs = [('bed', (43, -8)), ('coffee table', (44, -6)), ('bedside table', (85, -29)), ('mirror', (56, -22)),
-    #               ('mirror', (54, -28)), ('chair', (47, -2)), ('cushion', (85, -6)), ('cushion', (76, -8)),
-    #               ('cushion', (87, -28)), ('lamp', (85, -4)), ('plant', (60, -20)), ('plant', (75, -16)),
-    #               ('wardrobe', (64, -35)), ('cushion', (77, -40)), ('sofa', (57, -74)), ('television', (53, -63)),
-    #               ('cushion', (55, -72)), ('mirror', (64, -79)), ('shelf', (72, -77)), ('shelf', (77, -98)),
-    #               ('lamp', (68, -96))]
-    # known_objs = [('sofa', (-19, -33)), ('bedside table', (-16, -37)), ('mirror', (-15, -29)), ('bed', (-27, -71)),
-    #               ('wardrobe', (-34, -59)), ('coat stand', (-27, -26)), ('cushion', (-29, -54)), ('kettle', (-33, -43)),
-    #               ('lamp', (-24, -28)), ('computer', (-36, -77)), ('plant', (-37, -58)), ('sink', (-56, -62)),
-    #               ('shower', (-57, -54)), ('washing machine', (-76, -68)), ('bath', (-70, -71)), ('toilet', (-45, -43)),
-    #               ('plant', (0, -71))]
-    # ops_locator = OPS()
-    # res = object_locator.calculate_likelihoods(simple_map=np.zeros(shape=(4000, 4000)), target="sink", srg=SRG(),
+    # known_objs = [('shelf', (-93.14452835164016, 73.41920915439394)), ('desk', (46.07865370213018, 80.40953218912472)),
+    #               ('plant', (-10.427236259360711, -0.17810306183933733)),
+    #               ('sofa', (-33.65711668199049, 57.855197469185754)), ('bed', (-34.7715647348744, -38.21090435312075)),
+    #               ('coffee table', (-14.166142515099438, -30.158604026081818)),
+    #               ('bedside table', (46.30342386383106, 41.1464173125231)),
+    #               ('wardrobe', (-35.51305982231008, -16.825521752556767)),
+    #               ('mirror', (-26.203383686732792, -24.47547812019029)),
+    #               ('coat stand', (40.40673701886692, -2.4930133497383906)),
+    #               ('cushion', (-14.16441404153609, 48.57381137185976)),
+    #               ('computer', (34.690800588431586, 104.39804906177278)),
+    #               ('shower', (79.54296843206673, 43.28594128099246)),
+    #               ('washing machine', (-104.11959035193044, 72.55501874460295)),
+    #               ('bath', (78.52785331243035, 92.2634601763056)),
+    #               ('chair', (-106.42684179633581, -145.52016379274906)),
+    #               ('lamp', (-18.591778258952147, -30.223221526798127)),
+    #               ('toilet', (82.2877797375686, 19.765424362627996)),
+    #               ('sink', (101.39199048899516, 102.91990740292268)),
+    #               ('fridge', (-101.95904260453358, 59.127138586017054)),
+    #               ('kettle', (-119.48416605934726, 38.49017875437319)),
+    #               ('tumble dryer', (83.56569680252926, -9.194623264697938)),
+    #               ('table', (-80.19083296789941, -80.80142776115142)),
+    #               ('freezer', (-119.26186834687455, 21.314964158402404)),
+    #               ('television', (-119.0127816461465, -22.152607912201432)),
+    #               ('dishwasher', (-112.11745516599255, 63.211830087112645)),
+    #               ('kitchen cabinet', (-103.07335678576173, 95.01340321771372)),
+    #               ('toaster', (-110.91938459807002, 114.49453926038305)),
+    #               ('oven', (-95.6510263394145, 81.4635198814303)),
+    #               ('microwave', (-95.54827053802222, 73.85526397870721))]
+    #
+    # # # known_objs = [('sofa', (-19, -33)), ('bedside table', (-16, -37)), ('mirror', (-15, -29)), ('bed', (-27, -71)),
+    # # #               ('wardrobe', (-34, -59)), ('coat stand', (-27, -26)), ('cushion', (-29, -54)), ('kettle', (-33, -43)),
+    # # #               ('lamp', (-24, -28)), ('computer', (-36, -77)), ('plant', (-37, -58)), ('sink', (-56, -62)),
+    # # #               ('shower', (-57, -54)), ('washing machine', (-76, -68)), ('bath', (-70, -71)), ('toilet', (-45, -43)),
+    # # #               ('plant', (0, -71))]
+    # ops_locator = OPS(filename="out/srg.json")
+    # res = object_locator.calculate_likelihoods(simple_map=np.zeros(shape=(4000, 4000)), target="sink", srg=ops_locator.srg,
     #                                            known_obj_locs=known_objs)
-    # ops_locator._plot(res, known_objs, "sink", figname="eeeeee", colors={})
-#
+    # ops_locator._plot(res, known_objs, "shelf", figname="aaaaa", colors={})
