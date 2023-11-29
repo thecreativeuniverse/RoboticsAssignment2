@@ -120,7 +120,6 @@ class SVOD():
                             pass
                     if not exists:
                         # estimate new coords
-                        # FIXME
                         item_pos_x, item_pos_y = self.generateItemCoords(estimate_x, estimate_y, angle % 360, distance)
                         self.allObjects.append((obj, (item_pos_x, item_pos_y)))
                         self.generateItemLists((obj, item_pos_x, item_pos_y))
@@ -135,12 +134,11 @@ class SVOD():
         header.stamp = rospy.Time.now()
         header.frame_id = 'map'
         robot_pos.header = header
-        robot_pos.points.append(Point32(current_x / 20, current_y / 20, 0))
         robot_pos.points.append(Point32(estimate_x / 20, estimate_y / 20, 0))
         for i in range(len(msg.ranges)):
             laser_angle = current_theta
-            laser_x = math.sin(math.radians(laser_angle + 90 - ((i * 180) / 500))) * msg.ranges[i] + current_x / 20
-            laser_y = math.cos(math.radians(laser_angle + 90 - ((i * 180) / 500))) * msg.ranges[i] + current_y / 20
+            laser_x = math.sin(math.radians(laser_angle + 90 - ((i * 180) / 500))) * msg.ranges[i] + estimate_x / 20
+            laser_y = math.cos(math.radians(laser_angle + 90 - ((i * 180) / 500))) * msg.ranges[i] + estimate_y / 20
             robot_pos.points.append(Point32(laser_x, laser_y, 0))
         self.bot.publish(robot_pos)
 

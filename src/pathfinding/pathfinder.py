@@ -14,6 +14,7 @@ def get_distance(start, end):
     start_x, start_y = start
     end_x, end_y = end
     distance = math.sqrt((start_x + end_x) ** 2 + (start_y + end_y) ** 2)
+    return distance
 
 
 class ASTAR:
@@ -73,16 +74,9 @@ class ASTAR:
         4) drive there
         """
         route = self.actually_do_a_star()
-        simple_route = self.simplify_route(route)
+        print(route)
         pass
 
-    def simplify_route(self,route):
-        line_start = route[0]
-        line_end = route[1]
-        trial_end = route[2]
-
-
-        return route
 
     def is_wall_nearby(self, x, y):  # checks if a square is nearby to a wall
         rows, cols = len(self.simple_map), len(self.simple_map[0])
@@ -94,6 +88,7 @@ class ASTAR:
         return False
 
     def actually_do_a_star(self):
+        print("STARting")
         path = []
         visited = []
         connections = []
@@ -117,6 +112,7 @@ class ASTAR:
             # now all locations we can visit are in a list. Next we pick the one wish the smallest distance and break
             # if it is an unexplored space
             lowest = 0
+            print(potential_locations)
             for coordinate_index in range(len(potential_locations)):
                 if potential_locations[coordinate_index][1] < potential_locations[lowest][1]:
                     lowest = coordinate_index
@@ -128,6 +124,7 @@ class ASTAR:
 
             # next we check if we have found either an unknown square or our destination square
             if self.simple_map[new_coordinates[0]][new_coordinates[1]] == -1 or new_coordinates == (end_x, end_y):
+                print("exiting")
                 end_condition = True
                 # now we generate a path from the start to the final value in our visited list
                 current_node = -1
