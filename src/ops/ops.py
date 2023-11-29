@@ -175,8 +175,6 @@ class OPS:
     def update_particle_cloud(self):
         self.particle_cloud_pub.publish(self.particle_cloud)
         if not self._validate_subbed_vars():
-            print(self.known_objects)
-            print(self.target_object)
             return
         if self.ALREADY_CALCULATING:
             return

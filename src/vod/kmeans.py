@@ -1,4 +1,5 @@
 from sklearn.cluster import KMeans
+from sklearn.cluster import DBSCAN
 from sklearn.metrics import silhouette_score
 
 from sklearn.utils._testing import ignore_warnings
@@ -9,10 +10,28 @@ import numpy as np
 
 @ignore_warnings(category=ConvergenceWarning)
 def generate_centers(item_list):
-    if len(item_list)<2:
-        return item_list
-    item_list.append([300, 300])
-
+    # dbscan = DBSCAN(eps=0.5, min_samples=2)
+    # dbscan.fit(item_list)
+    # labels = dbscan.labels_
+    #
+    # if type(item_list) is list:
+    #     item_list = np.array(item_list)
+    #
+    # unique_labels = set(labels)
+    #
+    # centers = []
+    #
+    # for k in unique_labels:
+    #     if k == -1:
+    #         print("Found outliers in DBSCAN")
+    #     found_obj = item_list[labels == k]
+    #     if len(found_obj) == 0:
+    #         print("Len found obj == 0!")
+    #         continue
+    #     x = [i[0] for i in found_obj]
+    #     y = [i[1] for i in found_obj]
+    #     ave = [sum(x) / len(x), sum(y) / len(y)]
+    #     centers.append(ave)
 
     silhouette_list = []
 
