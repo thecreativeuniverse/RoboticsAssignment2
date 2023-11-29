@@ -4,14 +4,15 @@ import time
 import rospy
 from sensor_msgs.msg import PointCloud
 import std_msgs.msg
+from std_msgs.msg import String
 from geometry_msgs.msg import Point32
 
 
 class KnownThings():
 
     def __init__(self):
-        rospy.Subscriber("/known_objects", std_msgs.msg.String, callback=self.known_objects_callback,queue_size=1)
-        self.all_cloud_pub = rospy.Subscriber("/known_obj_cloud", PointCloud, queue_size=1)
+        rospy.Subscriber("/known_objects", String, callback=self.known_objects_callback,queue_size=1)
+        self.all_cloud_pub = rospy.Publisher("/known_obj_cloud", PointCloud, queue_size=1)
 
         self.known_objects = None
         self.target_obj = None
@@ -31,6 +32,7 @@ class KnownThings():
             pointcloud.points.append(Point32(x / 20, y / 20, 0.0))
 
         self.all_cloud_pub.publish(pointcloud)
+        print("publishing pointcloud")
 
 
 if __name__ == '__main__':

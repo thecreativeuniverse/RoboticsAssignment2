@@ -2,3 +2,5 @@ pandas
 svg-turtle
 tf
 scikit-learn
+numpy
+Pillow
