@@ -13,6 +13,7 @@ odom_recent = []
 odom_recent_limit = 2
 cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
 odom_pub = rospy.Publisher("estimated_pose", PoseStamped, queue_size=1)
+prior_z = 0
 
 '''
     Called everytime we receive laser readings, checks if the object threshold has been met, and 
@@ -42,35 +43,42 @@ def discovery_algorithm(base_data, averages):
     with some random angular velocity to try and get it unstuck.
     -   Otherwise, reverse
     '''
+    global prior_z
+
     if averages[0] < 0.45 or averages[1] < 0.4 or averages[2] < 0.4:
         base_data.linear.x = -1
-        cmd_pub.publish(base_data)
-        rospy.sleep(0.1)
-        base_data.linear.x = 0
         base_data.angular.z = 0.5
         cmd_pub.publish(base_data)
-        rospy.sleep(0.1)
+        prior_z = 0
 
     elif averages[3] < 0.4 or averages[4] < 0.45:
         base_data.linear.x = -1
-        cmd_pub.publish(base_data)
-        rospy.sleep(0.1)
-        base_data.linear.x = 0
         base_data.angular.z = -0.5
         cmd_pub.publish(base_data)
-        rospy.sleep(0.1)
+        prior_z = 0
 
     elif averages[2] >= 0.4:
         base_data.linear.x = 0.5
-        base_data.angular.z += (random.random() * 0.5) - 0.25
+        if ((random.random() * 100) >= 90):
+            prior_z = 0
+
+        if (prior_z >= 0.02):
+            base_data.angular.z = prior_z + (random.random() * 0.01)
+        elif (prior_z <= -0.02):
+            base_data.angular.z = prior_z + (random.random() * -0.01) 
+        else:
+            base_data.angular.z = (random.random() * 0.2) - 0.1
+        prior_z = base_data.angular.z
 
     elif (abs(odom_recent[0].pose.pose.position.x - odom_recent[1].pose.pose.position.x) <= 0.01) & (
             abs(odom_recent[0].pose.pose.position.y - odom_recent[1].pose.pose.position.y) <= 0.01):
         base_data.linear.x = -0.5
-        base_data.angular.z += (random.random() * 0.5) - 0.25
+        base_data.angular.z = (random.random() * 0.1) - 0.05
+        prior_z = 0
 
     else:
         base_data.linear.x = -1
+        prior_z = 0
 
     cmd_pub.publish(base_data)
 
