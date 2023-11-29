@@ -9,7 +9,7 @@ import numpy as np
 
 
 @ignore_warnings(category=ConvergenceWarning)
-def generate_centers(item_list):
+def generate_centers(item_list, estimated_clusters):
     # dbscan = DBSCAN(eps=0.5, min_samples=2)
     # dbscan.fit(item_list)
     # labels = dbscan.labels_
@@ -33,17 +33,23 @@ def generate_centers(item_list):
     #     ave = [sum(x) / len(x), sum(y) / len(y)]
     #     centers.append(ave)
 
+    if len(item_list) < 2:
+        return item_list
+    item_list.append([300, 300])
+
     silhouette_list = []
 
-    for test_k in range(2, len(item_list)):
+    print("testing k", len(item_list), "estimated", estimated_clusters)
+    for test_k in range(max(estimated_clusters - 2, 2), len(item_list)):
         kmeans = KMeans(n_clusters=test_k, n_init=10).fit(item_list)
         labels = kmeans.labels_
         silhouette_list.append(silhouette_score(item_list, labels, metric='euclidean'))
     actual_k = silhouette_list.index(max(silhouette_list)) + 2
 
-
+    print("actual k", actual_k)
     kmeans = KMeans(n_clusters=actual_k, n_init=10)
     kmeans.fit(item_list)
+    print("fitted")
     centers = kmeans.cluster_centers_
 
     return centers
