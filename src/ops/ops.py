@@ -340,8 +340,8 @@ class OPS:
     @staticmethod
     def generate_pose(pose=None, variance=0.0):
         # variance = 1
-        width = 250 / 20
-        height = 250 / 20
+        width = 500 / 20
+        height = 500 / 20
         if pose is not None:
             return Point32(pose.x + np.random.normal(0, variance),
                            pose.y + np.random.normal(0, variance),
