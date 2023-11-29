@@ -182,9 +182,6 @@ class SVOD():
             print(traceback.format_exc())
 
 
-
-
-
     def listener(self):
         rospy.init_node('known_objects', anonymous=True)
         rospy.Subscriber('/odom', Odometry, self.odomCallback)
