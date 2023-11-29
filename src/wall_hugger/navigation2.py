@@ -6,9 +6,8 @@ from std_msgs.msg import Float64MultiArray, String
 from nav_msgs.msg import Odometry
 from tf.msg import tfMessage
 from copy import deepcopy
-import numpy as np
 
-objectThreshold = 5
+objectThreshold = 10
 thresholdMet = False
 odomRecent = []
 cmdPub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
@@ -20,12 +19,9 @@ def callback(msg):
     averages = [msg.data[4], msg.data[5], msg.data[6], msg.data[7], msg.data[8]]
     base_data = Twist()
 
-    # TODO: Subscribe to object count use this as a basis for when to switch to A* searching after meeting a threshold of the number of objects found
     # TODO: Prioritise entering nearby doorways.
 
-    if thresholdMet:
-        discoveryAlgorithm(base_data, averages)
-    else:
+    if not thresholdMet:
         discoveryAlgorithm(base_data, averages)
 
 
