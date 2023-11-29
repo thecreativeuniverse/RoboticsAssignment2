@@ -2,6 +2,8 @@
 import copy
 import os.path
 from kmeans import generate_centers
+import traceback
+import numpy as np
 
 # 1)begin by subscribing to both robot pos and laserscan
 # 2)use the combination to identify if an object is visible
@@ -45,25 +47,44 @@ class SVOD():
         self.foundObjects = []
         self.allObjects = []
         self.itemLists = []
+        self.estimated_clusters = []
         self.itemListNames = []
 
     def generateItemLists(self, item):
         name, x_coord, y_coord = item
         if name in self.itemListNames:
-            self.itemLists[self.itemListNames.index(item[0])].append([x_coord, y_coord])
+            index = self.itemListNames.index(item[0])
+            self.itemLists[index].append([x_coord, y_coord])
+            self.estimated_clusters[index] += 1
         else:
             self.itemListNames.append(name)
             self.itemLists.append([[x_coord, y_coord]])
+            self.estimated_clusters.append(1)
 
     def doKmeans(self):
+        print("starting kmeans")
         self.foundObjects = []
         for i in range(len(self.itemListNames)):
-            centers = generate_centers(self.itemLists[i])
-            self.itemLists[i] = []
+            print("i", i)
+            centers = generate_centers(self.itemLists[i], self.estimated_clusters[i])
+            print("generated centres")
+            # self.itemLists[i] = []
+            self.estimated_clusters[i] = len(centers)
             for coords in centers:
+                print("coords", coords)
                 if tuple(coords)[0] != 300:
                     self.foundObjects.append((self.itemListNames[i], tuple(coords)))
-                    self.itemLists[i].append(tuple(coords))
+                    # self.itemLists[i].append(tuple(coords))
+                    all_items = self.itemLists[i]
+                    distances = [self.dist(item[0], item[1], coords[0], coords[1]) for item in all_items]
+                    to_keep = min(len(all_items), max(len(centers), 8))
+                    while len(all_items) > to_keep:
+                        print("len", len(all_items), "to keep", to_keep)
+                        index = distances.index(max(distances))
+                        del distances[index]
+                        del all_items[index]
+                    self.itemLists[i] = all_items
+
 
     def bearing(self, x1, y1, x2, y2):
         rad2deg = 57.2957795130823209
@@ -99,57 +120,67 @@ class SVOD():
         self.estimated_location = (pos[0], pos[1], degrees)
 
     def lsCallback(self, msg):
-        (current_x, current_y, current_theta) = copy.deepcopy(self.current_location)
-        (estimate_x, estimate_y, estimate_theta) = copy.deepcopy(self.estimated_location)
-        for item in self.lines:
-            (obj, x, y) = eval(item)
-            x -= 250
-            y -= 250
-            y *= -1
-            distance = math.sqrt((x - current_x) ** 2 + (y - current_y) ** 2)
-            angle = 360 + self.bearing(x, y, current_x, current_y)
-            robot_angle = estimate_theta
-            if 360 + (robot_angle - 90) % 360 < 360 + angle % 360 < 360 + (robot_angle + 90) % 360:
-                line_index = (round(((90 - (angle % 360 - robot_angle)) / 180) * 499))
-                if distance < 20 * msg.ranges[line_index]:
-                    exists = False
-                    for _, (pos_x, pos_y) in self.allObjects:
-                        if pos_x == x and pos_y == y:
-                            exists = True
-                        else:
-                            pass
-                    if not exists:
-                        # estimate new coords
-                        item_pos_x, item_pos_y = self.generateItemCoords(estimate_x, estimate_y, angle % 360, distance)
-                        self.allObjects.append((obj, (item_pos_x, item_pos_y)))
-                        self.generateItemLists((obj, item_pos_x, item_pos_y))
+        try:
+            (current_x, current_y, current_theta) = copy.deepcopy(self.current_location)
+            (estimate_x, estimate_y, estimate_theta) = copy.deepcopy(self.estimated_location)
+            for item in self.lines:
+                (obj, x, y) = eval(item)
+                x -= 250
+                y -= 250
+                y *= -1
+                distance = math.sqrt((x - current_x) ** 2 + (y - current_y) ** 2)
+                angle = 360 + self.bearing(x, y, current_x, current_y)
+                robot_angle = estimate_theta
+                if 360 + (robot_angle - 90) % 360 < 360 + angle % 360 < 360 + (robot_angle + 90) % 360:
+                    line_index = (round(((90 - (angle % 360 - robot_angle)) / 180) * 499))
+                    if distance < 20 * msg.ranges[line_index]:
+                        exists = False
+                        for _, (pos_x, pos_y) in self.allObjects:
+                            if pos_x == x and pos_y == y:
+                                exists = True
+                            else:
+                                pass
+                        if not exists:
+                            # estimate new coords
+                            item_pos_x, item_pos_y = self.generateItemCoords(estimate_x, estimate_y, angle % 360, distance)
+                            self.allObjects.append((obj, (item_pos_x, item_pos_y)))
+                            self.generateItemLists((obj, item_pos_x, item_pos_y))
 
-        self.doKmeans()
-        stuff = String(str(self.foundObjects))
-        self.clustered_obj.publish(stuff)
-        ###########################
-        # robot position and laserscan pointcloud
-        robot_pos = PointCloud()
-        header = std_msgs.msg.Header()
-        header.stamp = rospy.Time.now()
-        header.frame_id = 'map'
-        robot_pos.header = header
-        robot_pos.points.append(Point32(estimate_x / 20, estimate_y / 20, 0))
-        for i in range(len(msg.ranges)):
-            laser_angle = current_theta
-            laser_x = math.sin(math.radians(laser_angle + 90 - ((i * 180) / 500))) * msg.ranges[i] + estimate_x / 20
-            laser_y = math.cos(math.radians(laser_angle + 90 - ((i * 180) / 500))) * msg.ranges[i] + estimate_y / 20
-            robot_pos.points.append(Point32(laser_x, laser_y, 0))
-        self.bot.publish(robot_pos)
+            print("doing kmeans")
+            self.doKmeans()
+            print("Finished kmeans")
+            stuff = String(str(self.foundObjects))
+            self.clustered_obj.publish(stuff)
 
-        all_objects_pointcloud = PointCloud()
-        header = std_msgs.msg.Header()
-        header.stamp = rospy.Time.now()
-        header.frame_id = 'map'
-        all_objects_pointcloud.header = header
-        for data in self.allObjects:
-            all_objects_pointcloud.points.append(Point32(data[1][0] / 20, data[1][1] / 20, 0))
-        self.unclustered_obj.publish(all_objects_pointcloud)
+
+            ###########################
+            # robot position and laserscan pointcloud
+            robot_pos = PointCloud()
+            header = std_msgs.msg.Header()
+            header.stamp = rospy.Time.now()
+            header.frame_id = 'map'
+            robot_pos.header = header
+            robot_pos.points.append(Point32(current_x / 20, current_y / 20, 0))
+            robot_pos.points.append(Point32(estimate_x / 20, estimate_y / 20, 0))
+            for i in range(len(msg.ranges)):
+                laser_angle = current_theta
+                laser_x = math.sin(math.radians(laser_angle + 90 - ((i * 180) / 500))) * msg.ranges[i] + current_x / 20
+                laser_y = math.cos(math.radians(laser_angle + 90 - ((i * 180) / 500))) * msg.ranges[i] + current_y / 20
+                robot_pos.points.append(Point32(laser_x, laser_y, 0))
+            self.bot.publish(robot_pos)
+
+            all_objects_pointcloud = PointCloud()
+            header = std_msgs.msg.Header()
+            header.stamp = rospy.Time.now()
+            header.frame_id = 'map'
+            all_objects_pointcloud.header = header
+            for data in self.allObjects:
+                all_objects_pointcloud.points.append(Point32(data[1][0] / 20, data[1][1] / 20, 0))
+            self.unclustered_obj.publish(all_objects_pointcloud)
+        except Exception as e:
+            print("Something went wrong in kmeans:", e)
+            print(traceback.format_exc())
+
 
     def listener(self):
         rospy.init_node('known_objects', anonymous=True)
@@ -157,6 +188,10 @@ class SVOD():
         rospy.Subscriber('base_scan', LaserScan, self.lsCallback, queue_size=1)
         rospy.Subscriber('/estimated_pose', PoseStamped, self.estimate_callback)
         rospy.spin()
+
+    @staticmethod
+    def dist(x1, y1, x2, y2):
+        return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 
 if __name__ == '__main__':
