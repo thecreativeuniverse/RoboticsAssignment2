@@ -16,6 +16,8 @@ import rospy
 import random
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseStamped
+
 from std_msgs.msg import String
 from sensor_msgs.msg import PointCloud
 from geometry_msgs.msg import Point32
@@ -90,8 +92,8 @@ class SVOD():
         self.current_location = (pos[0], pos[1], degrees)
 
     def estimate_callback(self, msg):
-        pos = [msg.pose.pose.position.x * 20, msg.pose.pose.position.y * 20]
-        quat = (0, 0, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
+        pos = [msg.pose.position.x * 20, msg.pose.position.y * 20]
+        quat = (0, 0, msg.pose.orientation.z, msg.pose.orientation.w)
         euler = euler_from_quaternion(quat)
         degrees = 360 - (270 + ((180 * euler[2]) / math.pi)) % 360
         self.estimated_location = (pos[0], pos[1], degrees)
@@ -106,7 +108,7 @@ class SVOD():
             y *= -1
             distance = math.sqrt((x - current_x) ** 2 + (y - current_y) ** 2)
             angle = 360 + self.bearing(x, y, current_x, current_y)
-            robot_angle = current_theta
+            robot_angle = estimate_theta
             if 360 + (robot_angle - 90) % 360 < 360 + angle % 360 < 360 + (robot_angle + 90) % 360:
                 line_index = (round(((90 - (angle % 360 - robot_angle)) / 180) * 499))
                 if distance < 20 * msg.ranges[line_index]:
@@ -119,7 +121,7 @@ class SVOD():
                     if not exists:
                         # estimate new coords
                         # FIXME
-                        item_pos_x, item_pos_y = self.generateItemCoords(current_x, current_y, angle % 360, distance)
+                        item_pos_x, item_pos_y = self.generateItemCoords(estimate_x, estimate_y, angle % 360, distance)
                         self.allObjects.append((obj, (item_pos_x, item_pos_y)))
                         self.generateItemLists((obj, item_pos_x, item_pos_y))
 
@@ -155,7 +157,7 @@ class SVOD():
         rospy.init_node('known_objects', anonymous=True)
         rospy.Subscriber('/odom', Odometry, self.odomCallback)
         rospy.Subscriber('base_scan', LaserScan, self.lsCallback, queue_size=1)
-        rospy.Subscriber('/estimated_pose', Odometry, self.estimate_callback)
+        rospy.Subscriber('/estimated_pose', PoseStamped, self.estimate_callback)
         rospy.spin()
 
 

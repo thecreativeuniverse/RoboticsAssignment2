@@ -6,6 +6,7 @@ from std_msgs.msg import Float64MultiArray, String
 from nav_msgs.msg import Odometry
 from tf.msg import tfMessage
 from copy import deepcopy
+import numpy as np
 
 objectThreshold = 5
 thresholdMet = False
@@ -85,10 +86,13 @@ def tf_callback(msg):
     odom.pose.pose.position.y += translation.y
     odom.pose.pose.position.z += translation.z
 
-    odom.pose.pose.orientation.w += rotation.w
-    odom.pose.pose.orientation.x += rotation.x
-    odom.pose.pose.orientation.y += rotation.y
-    odom.pose.pose.orientation.z += rotation.z
+    odomOrientation = [odom.pose.pose.orientation.w, odom.pose.pose.orientation.x, odom.pose.pose.orientation.y, odom.pose.pose.orientation.z]
+    rotation = [rotation.w, rotation.x, rotation.y, rotation.z]
+    orientation = quaternion_multiply(odomOrientation, rotation)
+    odom.pose.pose.orientation.w = orientation[0]
+    odom.pose.pose.orientation.x = orientation[1]
+    odom.pose.pose.orientation.y = orientation[2]
+    odom.pose.pose.orientation.z = orientation[3]
 
     poseStamped = PoseStamped()
     poseStamped.header.frame_id = "map"
@@ -96,6 +100,26 @@ def tf_callback(msg):
     poseStamped.pose = odom.pose.pose
     odomPub.publish(poseStamped)
 
+# Code taken from https://automaticaddison.com/how-to-multiply-two-quaternions-together-using-python/ 29/11/23 12:32pm GMT
+def quaternion_multiply(Q0,Q1):
+    w0 = Q0[0]
+    x0 = Q0[1]
+    y0 = Q0[2]
+    z0 = Q0[3]
+     
+    w1 = Q1[0]
+    x1 = Q1[1]
+    y1 = Q1[2]
+    z1 = Q1[3]
+     
+    Q0Q1_w = w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1
+    Q0Q1_x = w0 * x1 + x0 * w1 + y0 * z1 - z0 * y1
+    Q0Q1_y = w0 * y1 - x0 * z1 + y0 * w1 + z0 * x1
+    Q0Q1_z = w0 * z1 + x0 * y1 - y0 * x1 + z0 * w1
+     
+    final_quaternion = [Q0Q1_w, Q0Q1_x, Q0Q1_y, Q0Q1_z]
+
+    return final_quaternion
 
 def known_objects_callback(msg):
     if len(eval(msg.data)) >= objectThreshold:
