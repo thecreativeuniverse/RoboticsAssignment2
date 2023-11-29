@@ -11,7 +11,7 @@ class KnownThings():
 
     def __init__(self):
         rospy.Subscriber("/known_objects", std_msgs.msg.String, callback=self.known_objects_callback,queue_size=1)
-        self.all_cloud_pub = rospy.Subscriber("/known_obj_cloud", PointCloud, queue_size=1)
+        self.all_cloud_pub = rospy.Publisher("/known_obj_cloud", PointCloud, queue_size=1)
 
         self.known_objects = None
         self.target_obj = None

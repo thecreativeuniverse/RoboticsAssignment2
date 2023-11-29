@@ -3,7 +3,6 @@ import os
 import json
 import pandas
 
-
 class SRG:
 
     # dummy srg for now; will need a way to serialise/deserialise this later on.

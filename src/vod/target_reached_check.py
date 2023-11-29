@@ -32,7 +32,7 @@ class TargetChecker:
         for temp_x, temp_y in self.target_obj_locations:
             dist = self.dist(x, y, temp_x, temp_y)
             print(dist)
-            if dist < 1:
+            if dist < 0.5:
                 print("Successfully found target object. Ending episode.")
                 path = os.path.join(os.path.dirname(__file__), "../main/stop")
                 subprocess.run(path)

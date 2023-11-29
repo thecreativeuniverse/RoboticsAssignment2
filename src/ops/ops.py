@@ -9,12 +9,12 @@ import numpy as np
 from srg import SRG, TrainingSRG
 import object_locator
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import time
 import sys
-import subprocess
-import signal
-import psutil
+from sklearn.cluster import DBSCAN
+from sklearn.metrics import silhouette_score
+
+from sklearn.exceptions import ConvergenceWarning
 
 
 class OPS:
@@ -81,12 +81,54 @@ class OPS:
         self.update_particle_cloud()
 
     def calculate_long_term_goal(self, known_object_locations=None):
-        particles_weights = [object_locator.get_weight(particle, self.target_object, self.srg, known_object_locations)
-                             for particle in self.particle_cloud.points]
-        if len(particles_weights) == 0:
+
+        particles = self.particle_cloud.points
+        if len(particles) == 0:
+            print("No particles available to estimate long term goal!")
             return
-        index = particles_weights.index(max(particles_weights))
-        estimated_pos = self.particle_cloud.points[index]
+
+        particle_coords = [(p.x, p.y) for p in particles]
+
+        dbscan = DBSCAN(eps=0.5, min_samples=3)
+        dbscan.fit(particle_coords)
+        labels = dbscan.labels_
+        unique_labels = set(labels)
+
+        particles = np.array(particles.copy())
+        cluster_weights = []
+        best_particle_per_cluster = []
+
+        simple_map_flat = np.array(self.simple_map)
+        size = int(np.sqrt(len(simple_map_flat)))
+        simple_map = np.split(simple_map_flat, size)
+
+        for k in unique_labels:
+            if k == -1:
+                continue
+            cluster = particles[labels == k]
+            if len(cluster) == 0:
+                print("cluster of len 0!")
+                continue
+            weights = [object_locator.get_weight(particle, target=self.target_object, srg=self.srg,
+                                                 known_obj_locs=known_object_locations, simple_map=simple_map) for
+                       particle in cluster]
+            best_particle = cluster[weights.index(max(weights))]
+            ave_weight = sum(weights) / len(weights)
+
+            cluster_weights.append(ave_weight)
+            best_particle_per_cluster.append(best_particle)
+
+        best_cluster = cluster_weights.index(max(cluster_weights))
+        estimated_pos = best_particle_per_cluster[best_cluster]
+
+        ###################################
+
+        # particles_weights = [object_locator.get_weight(particle, self.target_object, self.srg, known_object_locations)
+        #                      for particle in self.particle_cloud.points]
+        # if len(particles_weights) == 0:
+        #     return
+        # index = particles_weights.index(max(particles_weights))
+        # estimated_pos = self.particle_cloud.points[index]
 
         goal_pointcloud = PointCloud()
         goal_pointcloud.header.frame_id = "map"
@@ -94,6 +136,7 @@ class OPS:
         goal_pointcloud.points = [estimated_pos]
 
         self.goal_pos_pub.publish(goal_pointcloud)
+
     #     if not self._validate_subbed_vars():
     #         "invalid"
     #         return
@@ -102,9 +145,6 @@ class OPS:
     #
     #     self.ALREADY_CALCULATING = True
     #
-    #     data = np.array(self.simple_map)
-    #     size = int(np.sqrt(len(data)))
-    #     simple_map = np.split(data, size)
     #
     #     known_objects = self.known_objects
     #     print(f"we know {len(known_objects)} objects and are looking for {self.target_object}")
@@ -135,6 +175,8 @@ class OPS:
     def update_particle_cloud(self):
         self.particle_cloud_pub.publish(self.particle_cloud)
         if not self._validate_subbed_vars():
+            print(self.known_objects)
+            print(self.target_object)
             return
         if self.ALREADY_CALCULATING:
             return
@@ -148,9 +190,9 @@ class OPS:
             # This will be used specifically to calulate how many particles to redraw.
             # particles_weights = [self.sensor_model.get_weight(scan, particle) for particle in initial_particles]
 
-            data = np.array(self.simple_map)
-            size = int(np.sqrt(len(data)))
-            # simple_map = np.split(data, size)
+            simple_map_flat = np.array(self.simple_map)
+            size = int(np.sqrt(len(simple_map_flat)))
+            simple_map = np.split(simple_map_flat, size)
 
             known_objects = self.known_objects
 
@@ -173,8 +215,10 @@ class OPS:
 
             # Recalculate the weights of all particles and append them to an array, then calculate an average
             # particles_weights = [self.sensor_model.get_weight(scan, particle) for particle in initial_particles]
-            particles_weights = [object_locator.get_weight(particle, self.target_object, srg, known_object_locations) for
-                                 particle in initial_particles]
+            particles_weights = [
+                object_locator.get_weight(particle, self.target_object, srg, known_object_locations, simple_map)
+                for
+                particle in initial_particles]
 
             sum_of_weights = sum(particles_weights)
             if sum_of_weights > 0:
@@ -204,16 +248,20 @@ class OPS:
 
                     if i < len(cum_weights):
                         break
-                    particles_kept.append(self.generate_pose(pose=particles_kept[i], variance=(particles_weights[i] * 1000)))
+                    particles_kept.append(
+                        self.generate_pose(pose=particles_kept[i], variance=(particles_weights[i] * 1000)))
                     current_threshold += tick_size
 
-                particles_weights = [object_locator.get_weight(particle, self.target_object, srg, known_object_locations) for particle in particles_kept]
+                particles_weights = [
+                    object_locator.get_weight(particle, self.target_object, srg, known_object_locations, simple_map) for particle in
+                    particles_kept]
 
                 while len(particles_weights) < particles_to_keep:
                     new_poses = []
                     for i in range(50):
                         new_pose = self.generate_pose()
-                        new_weight = object_locator.get_weight(new_pose, self.target_object, srg, known_object_locations)
+                        new_weight = object_locator.get_weight(new_pose, self.target_object, srg,
+                                                               known_object_locations, simple_map)
                         new_poses.append((new_pose, new_weight))
                     new_poses = sorted(new_poses, key=lambda x: x[1])
 
@@ -308,29 +356,11 @@ if __name__ == '__main__':
     ops_locator = OPS(train=train, filename="out/srg.json")
     rospy.spin()
 
-    # # debugging - not for main use
-    # known_objs = [('fridge', (-5.4447517285518074, -10.511059390465505)),
-    #               ('plant', (10.608419273698644, -87.45484271443448)),
-    #               ('table', (-59.556690199019435, 99.06569097804586)),
-    #               ('wardrobe', (-15.476453459049793, -122.73921405994496)),
-    #               ('chair', (19.84616008613868, -72.60512049378275)),
-    #               ('computer', (7.078984713188433, -104.15601402786699)),
-    #               ('sofa', (-55.24512692101183, 14.022006410029306)),
-    #               ('shelf', (68.19734379389512, -147.87893592516596)),
-    #               ('cushion', (11.089820180766182, -88.7380641387179)),
-    #               ('television', (-20.391789731646455, -8.565092528433112)),
-    #               ('oven', (-58.71444612949229, -25.02076611695668)),
-    #               ('desk', (-37.64326397440233, -137.7039960111055)),
-    #               ('bedside table', (14.144943113750202, -107.77240408022112)),
-    #               ('mirror', (-13.071875825168078, -87.59109840428454)),
-    #               ('lamp', (-36.691051270977766, -90.60896619161309)),
-    #               ('tumble dryer', (46.349451001924905, -149.25574643433427)),
-    #               ('washing machine', (52.79477177118423, -151.77654956374687)),
-    #               ('toilet', (53.34043442295351, -147.9053218065922)),
-    #               ('shower', (78.79916836406649, -142.84975242267168))]
-    #
+    # # # debugging - not for main use
+    # known_objs = [('oven', (11.0, 11.0)), ('table', (-0.9999999999999858, 18.999999999999986)), ('coffee table', (48.0, 33.0)), ('shelf', (-51.00001621119738, -62.99993801122765)), ('desk', (-81.32812499999997, -106.95312499999999)), ('television', (-35.98632812500003, -94.94970703125)), ('chair', (-39.999832019209876, -92.99830630794168)), ('cushion', (-39.00067917060491, -118.99980371070329)), ('plant', (-58.99999999996727, -109.99999999990182)), ('sink', (94.0, 2.000000000000014)), ('shower', (86.0, 34.000000000000014)), ('washing machine', (96.0, -3.000000000000014)), ('tumble dryer', (88.0, 2.000000000000014)), ('bath', (82.0, -16.000000000000043)), ('toilet', (80.0, 22.999999999999986)), ('sofa', (-30.0, -28.999999999999986)), ('fridge', (-15.999999999999986, -13.000000000000014)), ('lamp', (-48.0, -104.00000000000001)), ('mirror', (-77.99999995529649, -83.00000001490116)), ('wardrobe', (-57.99999999999999, -70.0)), ('bed', (-74.00000000000003, -123.99999999999999)), ('bedside table', (-51.009765625, -50.134765625)), ('kettle', (-55.00000000000001, -119.00000000000003))]
+    # #
     # ops_locator = OPS(filename="out/srg.json")
-    # target  = "bedside table"
+    # target = "bedside table"
     # res = object_locator.calculate_likelihoods(simple_map=np.zeros(shape=(4000, 4000)), target=target, srg=ops_locator.srg,
     #                                            known_obj_locs=known_objs)
-    # ops_locator._plot(res, known_objs, target, figname="multiplier", colors={})
+    # ops_locator._plot(res, known_objs, target, figname="somethibng", colors={})

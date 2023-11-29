@@ -76,3 +76,4 @@ if __name__ == '__main__':
 
     time.sleep(5)
     target_obj_pub.publish(target_pointcloud)
+    target_obj_publisher.publish(std_msgs.msg.String(target_obj))
