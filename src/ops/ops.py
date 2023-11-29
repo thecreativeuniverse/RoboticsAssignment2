@@ -279,6 +279,7 @@ class OPS:
         except Exception as e:
             print("SOMETHING WENT WRONG:", e)
             print(traceback.format_exc())
+            print(len(self.simple_map))
         finally:
             self.ALREADY_CALCULATING = False
 
