@@ -126,12 +126,12 @@ class OPS:
 
         ###################################
 
-        # particles_weights = [object_locator.get_weight(particle, self.target_object, self.srg, known_object_locations)
-        #                      for particle in self.particle_cloud.points]
-        # if len(particles_weights) == 0:
-        #     return
-        # index = particles_weights.index(max(particles_weights))
-        # estimated_pos = self.particle_cloud.points[index]
+        particles_weights = [object_locator.get_weight(particle, self.target_object, self.srg, known_object_locations)
+                             for particle in self.particle_cloud.points]
+        if len(particles_weights) == 0:
+            return
+        index = particles_weights.index(max(particles_weights))
+        estimated_pos = self.particle_cloud.points[index]
 
         estimated_pos.x = 69/20
         estimated_pos.y = 420/20
@@ -333,15 +333,15 @@ class OPS:
 
 
 if __name__ == '__main__':
-    # train = '--train' in sys.argv
-    # rospy.init_node('ops', anonymous=True)
-    # ops_locator = OPS(train=train, filename="out/srg.json")
-    # rospy.spin()
+    train = '--train' in sys.argv
+    rospy.init_node('ops', anonymous=True)
+    ops_locator = OPS(train=train, filename="out/srg.json")
+    rospy.spin()
 
-    # # debugging - not for main use
-    known_objs = [('chair', (11.10544902720666, 97.51112942250421)), ('chair', (11.126679939714535, 97.48948050330165)), ('chair', (11.144313679729208, 97.47149957984041)), ('cushion', (9.200812072266388, 81.41388881371546)), ('cushion', (9.200812072266402, 81.41388881371543)), ('plant', (2.676967049210816, 86.44197972731075)), ('plant', (2.645287071793142, 86.4793008719277)), ('plant', (2.680969566384192, 86.43726455666729)), ('plant', (2.6809695663841993, 86.43726455666729)), ('mirror', (0.20081207226643016, 91.41388881371546)), ('mirror', (37.826970227110024, 95.06685147414359)), ('mirror', (28.69470407298681, 94.07991740180243)), ('mirror', (32.42482210337922, 93.07768706341845)), ('mirror', (32.42482210337923, 93.07768706341847)), ('bedside table', (24.9147988674178, 91.7104790068312)), ('bedside table', (24.872993212222738, 92.05937001094556)), ('bedside table', (24.612945887809218, 90.9248259058227)), ('bedside table', (24.875313214872705, 92.02650288390596)), ('television', (27.20081207226643, 80.41388881371539)), ('television', (27.20081207226643, 80.4138888137154)), ('lamp', (29.168996773132662, 82.4463305111741)), ('lamp', (29.184904422699532, 82.43010966244476)), ('sink', (100.50399611846619, 79.14411267817724)), ('sink', (100.5464165173112, 79.10085708156569)), ('sink', (101.08374156934795, 78.55295285781945)), ('shower', (106.0, 100.0)), ('bath', (90.03800592174511, 82.75709768180928)), ('bath', (94.61940899700576, 78.08549324776234)), ('bath', (99.20081207226643, 73.4138888137154)), ('toilet', (73.03800592174512, 86.75709768180928)), ('toilet', (77.61940899700576, 82.08549324776234)), ('toilet', (77.61940899700578, 82.08549324776234)), ('tumble dryer', (102.2008120722664, 70.4138888137154)), ('tumble dryer', (102.10536617486514, 70.51121390609138)), ('tumble dryer', (102.1371814739989, 70.47877220863273)), ('tumble dryer', (102.14778657371015, 70.46795830947984))]
-    ops_locator = OPS(filename="out/srg.json")
-    target = "sink"
-    res = object_locator.calculate_likelihoods(simple_map=np.zeros(shape=(4000, 4000)), target=target, srg=ops_locator.srg,
-                                               known_obj_locs=known_objs)
-    ops_locator._plot(res, known_objs, target, figname="looking for sink adk", colors={})
+    # # # debugging - not for main use
+    # known_objs = [('chair', (11.10544902720666, 97.51112942250421)), ('chair', (11.126679939714535, 97.48948050330165)), ('chair', (11.144313679729208, 97.47149957984041)), ('cushion', (9.200812072266388, 81.41388881371546)), ('cushion', (9.200812072266402, 81.41388881371543)), ('plant', (2.676967049210816, 86.44197972731075)), ('plant', (2.645287071793142, 86.4793008719277)), ('plant', (2.680969566384192, 86.43726455666729)), ('plant', (2.6809695663841993, 86.43726455666729)), ('mirror', (0.20081207226643016, 91.41388881371546)), ('mirror', (37.826970227110024, 95.06685147414359)), ('mirror', (28.69470407298681, 94.07991740180243)), ('mirror', (32.42482210337922, 93.07768706341845)), ('mirror', (32.42482210337923, 93.07768706341847)), ('bedside table', (24.9147988674178, 91.7104790068312)), ('bedside table', (24.872993212222738, 92.05937001094556)), ('bedside table', (24.612945887809218, 90.9248259058227)), ('bedside table', (24.875313214872705, 92.02650288390596)), ('television', (27.20081207226643, 80.41388881371539)), ('television', (27.20081207226643, 80.4138888137154)), ('lamp', (29.168996773132662, 82.4463305111741)), ('lamp', (29.184904422699532, 82.43010966244476)), ('sink', (100.50399611846619, 79.14411267817724)), ('sink', (100.5464165173112, 79.10085708156569)), ('sink', (101.08374156934795, 78.55295285781945)), ('shower', (106.0, 100.0)), ('bath', (90.03800592174511, 82.75709768180928)), ('bath', (94.61940899700576, 78.08549324776234)), ('bath', (99.20081207226643, 73.4138888137154)), ('toilet', (73.03800592174512, 86.75709768180928)), ('toilet', (77.61940899700576, 82.08549324776234)), ('toilet', (77.61940899700578, 82.08549324776234)), ('tumble dryer', (102.2008120722664, 70.4138888137154)), ('tumble dryer', (102.10536617486514, 70.51121390609138)), ('tumble dryer', (102.1371814739989, 70.47877220863273)), ('tumble dryer', (102.14778657371015, 70.46795830947984))]
+    # ops_locator = OPS(filename="out/srg.json")
+    # target = "sink"
+    # res = object_locator.calculate_likelihoods(simple_map=np.zeros(shape=(4000, 4000)), target=target, srg=ops_locator.srg,
+    #                                            known_obj_locs=known_objs)
+    # ops_locator._plot(res, known_objs, target, figname="looking for sink adk", colors={})
