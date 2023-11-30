@@ -29,6 +29,8 @@ class ASTAR:
         self.object_threshold = 40
         self.threshold_met = False
         self.target_object = None
+        self.PATHFINDING_COUNT = 0
+        self.ALREADY_MOVING = False
         rospy.Subscriber('known_objects', String, self.known_objects_callback)
         rospy.Subscriber('target_object', String, self.target_callback)
 
@@ -54,7 +56,7 @@ class ASTAR:
         self.goal_location = None  # actual place we are trying to go
         self.current_location = None  # where the robot is, and orientation
         self.pathfind_to = None
-        self.PATHFINDING_COUNT = 0
+
 
     # takes the x,y coordinates of from goal position and saves them to a variable
     def destination_callback(self, msg):
@@ -78,29 +80,43 @@ class ASTAR:
         self.target_object = msg.data
 
     def odom_callback(self, msg):
-        # get robot coordinates
-        x, y = msg.pose.pose.position.x * 20, msg.pose.pose.position.y * 20
+        try:
+            # get robot coordinates
+            x, y = msg.pose.pose.position.x * 20, msg.pose.pose.position.y * 20
 
-        # get robot bearing
-        quaternion = (0, 0, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
-        euler = euler_from_quaternion(quaternion)
-        degrees = 360 - (270 + ((180 * euler[2]) / math.pi)) % 360
+            # get robot bearing
+            quaternion = (0, 0, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w)
+            euler = euler_from_quaternion(quaternion)
+            degrees = 360 - (270 + ((180 * euler[2]) / math.pi)) % 360
 
-        # set them to current location
-        self.current_location = (round(self.size / 2 + x), round(self.size / 2 - y), degrees)
+            # set them to current location
+            self.current_location = (round(self.size / 2 + x), round(self.size / 2 - y), degrees)
 
-        # determine if we have just started or if we have reached our target we can navigate to:
-        # just started
-        if self.pathfind_to is None:
-            self.calculate_path()
-            return
+            # determine if we have just started or if we have reached our target we can navigate to:
+            # just started
+            if self.pathfind_to is None:
+                self.calculate_path()
+                return
 
-        # calculate the distance to the target we can navigate to
-        distance_from_destination = get_distance(self.current_location, self.goal_location)
+            # calculate the distance to the target we can navigate to
+            distance_from_destination = get_distance((self.current_location[0], self.current_location[1]), self.goal_location)
 
-        # we have reached our target we can navigate to
-        if distance_from_destination < 0.5:
-            self.calculate_path()
+            # we have reached our target we can navigate to
+            if distance_from_destination < 0.5:
+                print("REACHED TARGET!!")
+                self.ALREADY_MOVING = True
+
+
+            distance_from_pathfind_target = get_distance((self.current_location[0], self.current_location[1]), self.pathfind_to)
+
+            if distance_from_pathfind_target < 0.5:
+                self.calculate_path()
+
+
+        except Exception as e:
+            print("error", e)
+            print(traceback.format_exc())
+
 
     def calculate_path(self):  # calculates the path to the next destination we can drive to
         """
@@ -114,6 +130,8 @@ class ASTAR:
         """
         simple_map = self.simple_map
         if simple_map is None:
+            return
+        if self.goal_location is None:
             return
 
         goal_x, goal_y = self.goal_location
@@ -144,10 +162,13 @@ class ASTAR:
         return rad2deg * theta
 
     def hit_the_road(self, pathfinding_count):
-        print("Hitting the road") #debugging
         if self.pathfind_to is None:
             self.calculate_path()
             return
+        if self.ALREADY_MOVING:
+            return
+        self.ALREADY_MOVING = True
+        print("hititng the road")
         try:
             particle_cloud = PointCloud()
             particle_cloud.header.frame_id = "map"
@@ -170,19 +191,23 @@ class ASTAR:
                         direction += 360
                     while (not direction - 5 + 360 < (self.current_location[2]) % 360 + 360 < direction + 5 + 360
                            and self.PATHFINDING_COUNT == pathfinding_count):
-                        print("bearing", direction, self.current_location[2])
+                        # print("bearing", direction, self.current_location[2])
                         base_data = Twist()
                         base_data.angular.z = 0.5
-                        if self.PATHFINDING_COUNT != pathfinding_count:
-
-                            return
+                    if self.PATHFINDING_COUNT != pathfinding_count:
+                        self.ALREADY_MOVING = False
+                        return
+                    print("final bearing ", self.current_location[2])
                     while not x1 - 0.5 < self.current_location[0] < x1 + 0.5 or not y1 - 0.5 < self.current_location[1] < y1 + 0.5 and self.PATHFINDING_COUNT == pathfinding_count:
                         base_data = Twist()
                         base_data.linear.x = 0.2
                         self.cmd_pub.publish(base_data)
+                        self.ALREADY_MOVING = False
         except Exception as e:
             print("error", e)
             print(traceback.format_exc())
+        finally:
+            self.ALREADY_MOVING = False
 
     def is_wall_nearby(self, x, y):  # checks if a square is nearby to a wall
         rows, cols = len(self.simple_map), len(self.simple_map[0])
@@ -262,9 +287,7 @@ class ASTAR:
 
     def known_objects_callback(self, msg):
         known_objs = eval(msg.data)
-        #TODO this isn't working
-        print("target", self.target_object, [obj for obj, _, _ in known_objs])
-        if len(known_objs) >= self.object_threshold or (self.target_object is not None and self.target_object in [obj for obj, _, _ in known_objs]):
+        if len(known_objs) >= self.object_threshold or (self.target_object is not None and self.target_object in [obj for obj, _ in known_objs]):
             self.threshold_met = True
 
 
