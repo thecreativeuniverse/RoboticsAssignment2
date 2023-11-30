@@ -222,15 +222,17 @@ class OPS:
                     particle in particles_kept]
 
                 particles_to_add = round(particles_to_keep * 0.3)
-                new_particles = [self.generate_pose() for _ in range(particles_to_add * 5)]
-                new_particles = [
-                    (p, object_locator.get_weight(p, self.target_object, srg, known_object_locations, simple_map))
-                    for p in new_particles]
-                new_particles = sorted(new_particles, key=lambda x: x[1], reverse=True)
-                for i in range(particles_to_add):
-                    pose, weight = new_particles[i]
-                    particles_kept.append(pose)
-                    particles_weights.append(weight)
+                new_particles = [self.generate_pose() for _ in range(particles_to_add)]
+                particles_kept += new_particles
+
+                # new_particles = [
+                #     (p, object_locator.get_weight(p, self.target_object, srg, known_object_locations, simple_map))
+                #     for p in new_particles]
+                # new_particles = sorted(new_particles, key=lambda x: x[1], reverse=True)
+                # for i in range(particles_to_add):
+                #     pose, weight = new_particles[i]
+                #     particles_kept.append(pose)
+                #     particles_weights.append(weight)
 
                 # while len(particles_weights) < particles_to_keep:
                 #     print("3")
