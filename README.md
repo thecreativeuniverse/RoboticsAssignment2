@@ -107,11 +107,11 @@ Visual Object Detection (VOD)
 Subscribers
 -----------
 
--   Real Map
+-   objectList
 
 -   Estimated Position
 
--   Real Position
+-   Robot Odometry
 
 Publishers
 ----------
@@ -139,8 +139,8 @@ Assignments
 - particle cloud: `particle_cloud`
 - LaserScan: `base_scan`
 - SimpleMap: `map`
-- RealMap: `real_map` (for SVOD only)
-- Real Position: `current_pose` (for SVOD only)
+- objectList
+- Robot Odometry: `odom`
 - all seen objs + estimated positions: `known_objects`
 - location to travel to (long term goal from OPS): `goal_position`
 - target object (published at beginning of episode): `target_object`
