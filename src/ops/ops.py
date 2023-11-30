@@ -46,15 +46,15 @@ class OPS:
 
         self.pdf_map = np.zeros([self.simple_map_radius * 2, self.simple_map_radius * 2])
 
-        # self.particle_cloud = PointCloud()
-        # self.particle_cloud.header.frame_id = "map"
-        # self.particle_cloud.header.stamp = rospy.Time.now()
-        #
-        # self.pose_array_size = 200
-        #
-        # self.particle_cloud.points = [self.generate_pose() for _ in range(self.pose_array_size)]
-        #
-        # self.particle_cloud_pub.publish(self.particle_cloud)
+        self.particle_cloud = PointCloud()
+        self.particle_cloud.header.frame_id = "map"
+        self.particle_cloud.header.stamp = rospy.Time.now()
+
+        self.pose_array_size = 200
+
+        self.particle_cloud.points = [self.generate_pose() for _ in range(self.pose_array_size)]
+
+        self.particle_cloud_pub.publish(self.particle_cloud)
 
         self.ALREADY_CALCULATING = False
 
@@ -124,17 +124,15 @@ class OPS:
             best_cluster = cluster_weights.index(max(cluster_weights))
             estimated_pos = best_particle_per_cluster[best_cluster]
 
-        ###################################
-
-        particles_weights = [object_locator.get_weight(particle, self.target_object, self.srg, known_object_locations)
+        particles_weights = [object_locator.get_weight(particle, self.target_object, self.srg, known_object_locations, simple_map)
                              for particle in self.particle_cloud.points]
         if len(particles_weights) == 0:
             return
         index = particles_weights.index(max(particles_weights))
         estimated_pos = self.particle_cloud.points[index]
 
-        estimated_pos.x = 69/20
-        estimated_pos.y = 420/20
+        # estimated_pos.x = 69/20
+        # estimated_pos.y = 420/20
 
         goal_pointcloud = PointCloud()
         goal_pointcloud.header.frame_id = "map"
@@ -148,7 +146,6 @@ class OPS:
         if not self._validate_subbed_vars():
             return
         if self.ALREADY_CALCULATING:
-            print("ALREADY CALCULATING")
             return
         self.ALREADY_CALCULATING = True
 
@@ -212,7 +209,6 @@ class OPS:
                 # previous particle that did have a high enough cumulative weight
                 i = 0
                 for j in range(self.pose_array_size):
-                    print(current_threshold)
                     while i < len(cum_weights) and current_threshold > cum_weights[i]:
                         i += 1
 
