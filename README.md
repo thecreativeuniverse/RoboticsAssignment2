@@ -33,8 +33,6 @@ Subscribers
 
 -   Laserscan
 
--   Generated real map (GRM)
-
 -   Particle cloud
 
 Publishers
@@ -140,10 +138,9 @@ Assignments
 - estimated position: `estimated_pose`
 - particle cloud: `particle_cloud`
 - LaserScan: `base_scan`
-- SimpleMap: `simple_map`
+- SimpleMap: `map`
 - RealMap: `real_map` (for SVOD only)
 - Real Position: `current_pose` (for SVOD only)
 - all seen objs + estimated positions: `known_objects`
 - location to travel to (long term goal from OPS): `goal_position`
-- camera: `camera`
 - target object (published at beginning of episode): `target_object`
