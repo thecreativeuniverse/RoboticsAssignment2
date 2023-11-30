@@ -8,7 +8,7 @@ from tf.msg import tfMessage
 from copy import deepcopy
 import time
 
-object_threshold = 35
+object_threshold = 40
 threshold_met = False
 odom_recent = None
 cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
@@ -44,13 +44,13 @@ def discovery_algorithm(base_data, averages):
 
     if averages[0] < 0.45 or averages[1] < 0.4 or averages[2] < 0.4:
         base_data.linear.x = -1
-        base_data.angular.z = 0.5
+        base_data.angular.z = 1
         cmd_pub.publish(base_data)
         prior_z = 0
 
     elif averages[3] < 0.4 or averages[4] < 0.45:
         base_data.linear.x = -1
-        base_data.angular.z = -0.5
+        base_data.angular.z = -1
         cmd_pub.publish(base_data)
         prior_z = 0
 
@@ -150,9 +150,9 @@ def listener():
     rospy.Subscriber('known_objects', String, known_objects_callback)
 
     base_data = Twist()
-    base_data.angular.z = 0.8
+    base_data.angular.z = 0.75
     base_data.linear.x = 0
-    endTime = time.time() + 10
+    endTime = time.time() + 6
     while ((time.time() < endTime)):
         cmd_pub.publish(base_data)
 
