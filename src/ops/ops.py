@@ -133,6 +133,9 @@ class OPS:
         # index = particles_weights.index(max(particles_weights))
         # estimated_pos = self.particle_cloud.points[index]
 
+        estimated_pos.x = 69/20
+        estimated_pos.y = 420/20
+
         goal_pointcloud = PointCloud()
         goal_pointcloud.header.frame_id = "map"
         goal_pointcloud.header.stamp = rospy.Time.now()

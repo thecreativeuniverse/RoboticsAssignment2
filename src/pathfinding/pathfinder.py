@@ -11,7 +11,6 @@ from geometry_msgs.msg import Twist
 from tf.transformations import euler_from_quaternion
 from sensor_msgs.msg import LaserScan
 
-
 from PIL import Image
 
 
@@ -32,32 +31,32 @@ class ASTAR:
         rospy.Subscriber('/odom', Odometry, self.odom_callback, queue_size=1)
         rospy.Subscriber('base_scan', LaserScan, self.lsCallback, queue_size=1)
 
-
-        self.cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
+        self.cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
 
         self.simple_map = []  # 2d map of space
         self.final_destination = []  # actual place we are trying to go
         self.current_location = []  # where the robot is, and orientation
         self.current_destination = [69, 420]  # where we can currently navigate to
-        self.size = 0  # size of map
-        self.route =[]
-        self.all_visited =[]
+        self.size = None  # size of map
+        self.route = []
+        self.all_visited = []
 
         self.PATHFINDING_COUNT = 0
 
         rospy.spin()
 
     def destination_callback(self, msg):  # takes the x,y coordinates of from goal position and saves them to a variable
-        x = round(self.size / 2 + (msg.points[0].x*20))
-        y = round(self.size / 2 + (msg.points[0].y*20))
-
-        if get_distance((x,y), (self.final_destination[0], self.final_destination[1])) < 1:
-            return
+        x = round(self.size / 2 + (msg.points[0].x * 20)) + 1
+        y = round(self.size / 2 - (msg.points[0].y * 20)) + 1
+        print("UPDATING DESTINATION" * 100)
+        if len(self.final_destination) != 0:
+            if get_distance((x, y), (self.final_destination[0], self.final_destination[1])) < 1:
+                return
         self.PATHFINDING_COUNT += 1
         self.final_destination = [x, y]
+
     def lsCallback(self, msg):
         self.hit_the_road(self.PATHFINDING_COUNT)
-
 
     def odom_callback(self, msg):
         # get robot coordinates
@@ -69,10 +68,11 @@ class ASTAR:
         degrees = 360 - (270 + ((180 * euler[2]) / math.pi)) % 360
 
         # set them to current location
-        self.current_location = [round(self.size / 2 + x), round(self.size / 2 + y), degrees]
+        self.current_location = [round(self.size / 2 + x), round(self.size / 2 - y), degrees]
 
         # calculate the distance to the target we can navigate to
-        distance_from_destination = math.sqrt((x + self.current_destination[0]) ** 2 + (y + self.current_destination[1]) ** 2)
+        distance_from_destination = math.sqrt(
+            (x + self.current_destination[0]) ** 2 + (y + self.current_destination[1]) ** 2)
 
         # determine if we have just started or if we have reached our target we can navigate to:
         # just started
@@ -94,11 +94,12 @@ class ASTAR:
         3) simplify the directions
         4) drive there
         """
+        print("CALCULATING PATH")
         self.route = self.actually_do_a_star()
-        print(self.route)
+        print("ROUTE:", self.route)
         # self.hit_the_road()
 
-        self.generate_output_image()
+        # self.generate_output_image()
 
     def bearing(self, x1, y1, x2, y2):
         rad2deg = 57.2957795130823209
@@ -106,10 +107,10 @@ class ASTAR:
             return 0
         theta = math.atan2(x1 - x2, y1 - y2)
         return rad2deg * theta
+
     def hit_the_road(self, pathfinding_count):
         print("hitting the road")
-        print(self.final_destination)
-        self.generate_output_image()
+        # self.generate_output_image()
         print(len(self.route))
         print(self.current_location)
         if len(self.route) != 0:
@@ -117,28 +118,32 @@ class ASTAR:
             self.current_destination[0] = self.route[-1][0]
             self.current_destination[1] = self.route[-1][1]
             for location in range(len(self.route)):
-                x_pos,y_pos,rotation = self.current_location
-                x1,y1 = self.route[location]
-                direction = self.bearing(self.current_location[0],self.current_destination[1],x1,y1)
-                if direction <0:
-                    direction+=360
+                x_pos, y_pos, rotation = self.current_location
+                x1, y1 = self.route[location]
+                direction = self.bearing(self.current_location[0], self.current_destination[1], x1, y1)
+                if direction < 0:
+                    direction += 360
                 print(direction)
-                while not direction-10+360< (self.current_location[2]+180)%360+360 <direction+10+360 and self.PATHFINDING_COUNT == pathfinding_count:
-                    print("rotation = ",self.current_location)
-                    #print(direction-10+360< self.current_location[2]-90+360 <direction+10+360)
+                while (not direction - 10 + 360 < (self.current_location[2]) % 360 + 360 < direction + 10 + 360
+                       and self.PATHFINDING_COUNT == pathfinding_count):
+                    print("rotation = ", self.current_location)
+                    print("aiming for= ",direction)
+                    # print(direction-10+360< self.current_location[2]-90+360 <direction+10+360)
                     base_data = Twist()
                     base_data.angular.z = 0.5
                     self.cmd_pub.publish(base_data)
-                print(self.current_location,x1)
-                while not x1-3 < self.current_location[0] <x1+3 or not y1-3 < self.current_location[1] <y1+3 and self.PATHFINDING_COUNT == pathfinding_count:
-                        print("driving to:",x1,y1)
-                        print("currently at",self.current_location)
-                        base_data = Twist()
-                        base_data.linear.x = 0.1
-                        self.cmd_pub.publish(base_data)
+                print(self.current_location, x1)
+                while not x1 - 0.5 < self.current_location[0] < x1 + 0.5 or not y1 - 0.5 < self.current_location[
+                    1] < y1 + 0.5 and self.PATHFINDING_COUNT == pathfinding_count:
+                    print("driving to:", x1, y1)
+                    print("currently at", self.current_location)
+                    base_data = Twist()
+                    base_data.linear.x = 0.1
+                    self.cmd_pub.publish(base_data)
         else:
             print("no route provided")
         print("finished driving")
+
     def is_wall_nearby(self, x, y):  # checks if a square is nearby to a wall
 
         rows, cols = len(self.simple_map), len(self.simple_map[0])
@@ -150,10 +155,12 @@ class ASTAR:
         return False
 
     def actually_do_a_star(self):
+        print("A-STARting")
         path = []
         visited = []
         connections = []
         start_x, start_y, _ = self.current_location
+        print("appending start",start_x,start_y,self.size)
         visited.append((start_x, start_y,))
         connections.append(0)
         end_x, end_y = self.final_destination
@@ -162,12 +169,14 @@ class ASTAR:
             potential_locations = []
             for location in range(len(visited)):
                 x, y = visited[location]
+                print("exploring:",x,y)
                 for i in range(-1, 2):
                     for j in range(-1, 2):
                         coordinates = (x + i, y + j)
                         # checking the coordinates are not already visited or a wall / near a wall
                         if coordinates not in visited and not self.is_wall_nearby(x + i, y + j):
-                            potential_locations.append((coordinates, get_distance(coordinates, (end_x, end_y)), location))
+                            potential_locations.append(
+                                (coordinates, get_distance(coordinates, (end_x, end_y)), location))
 
             # now all locations we can visit are in a list. Next we pick the one wish the smallest distance and break
             # if it is an unexplored space
@@ -180,9 +189,10 @@ class ASTAR:
 
             visited.append(new_coordinates)
             connections.append(new_connection)
-
             # next we check if we have found either an unknown square or our destination square
-            if self.simple_map[new_coordinates[1]][new_coordinates[0]] == -1 or new_coordinates == (end_x, end_y) or len(visited) > 100:
+            print("value:", self.simple_map[new_coordinates[1]][new_coordinates[0]])
+            if self.simple_map[new_coordinates[1]][new_coordinates[0]] == -1 or new_coordinates == (
+            end_x, end_y) or len(visited) > 100:
                 end_condition = True
                 self.all_visited = visited
                 # now we generate a path from the start to the final value in our visited list
@@ -195,6 +205,7 @@ class ASTAR:
                 return path
 
     def map_callback(self, msg):
+        print("map"*100)
         data = msg.data
         data = np.asarray(data)
         self.size = int(np.sqrt(len(data)))
@@ -205,15 +216,15 @@ class ASTAR:
         robot_x, robot_y, robot_theta = self.current_location
         robot_x = round(robot_x)
         robot_y = round(robot_y)
-        map_copy =copy.deepcopy(self.simple_map)
+        map_copy = copy.deepcopy(self.simple_map)
+        print("robotpos:", robot_x, robot_y)
         map_copy[robot_y][robot_x] = 100
-        destination_x,destination_y = self.final_destination
+        destination_x, destination_y = self.final_destination
         map_copy[destination_y][destination_x] = 69
         for coords in self.all_visited:
-            map_copy[coords[1]][coords[0]] =map_copy[coords[1]][coords[0]]+50
+            map_copy[coords[1]][coords[0]] = map_copy[coords[1]][coords[0]] + 50
         pil_image = Image.fromarray(np.uint8(map_copy))
         # pixels = pil_image.getdata()
-
 
         pil_image.save("test.png", "PNG")
 
