@@ -89,7 +89,7 @@ class OPS:
 
         particle_coords = [(p.x, p.y) for p in particles]
 
-        dbscan = DBSCAN(eps=0.5, min_samples=3)
+        dbscan = DBSCAN(eps=0.6, min_samples=4)
         dbscan.fit(particle_coords)
         labels = dbscan.labels_
         unique_labels = set(labels)
@@ -326,8 +326,8 @@ class OPS:
         width = 500 / 20
         height = 500 / 20
         if pose is not None:
-            return Point32(pose.x + np.random.normal(0, variance / 100),
-                           pose.y + np.random.normal(0, variance / 100),
+            return Point32(pose.x + np.random.normal(0, variance / 400),
+                           pose.y + np.random.normal(0, variance / 400),
                            0)
         else:
             return Point32((np.random.uniform(-width / 2, width / 2)), np.random.uniform(-height / 2, height / 2), 0)
