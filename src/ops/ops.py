@@ -231,8 +231,6 @@ class OPS:
                     particle in
                     particles_kept]
 
-                print("kept", len(particles_kept))
-
                 # particles_to_add = particles_to_keep - len(particles_kept)
                 # random_poses = [self.generate_pose() for _ in range(particles_to_add * 5)]
                 # random_poses = [
