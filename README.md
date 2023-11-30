@@ -103,7 +103,7 @@ an explored non wall square the square in question will be published.
 In the event the array of objects contains the desired object then it
 will be directly navigated to.
 
-Simulated Visual Object Detection (SVOD)
+Visual Object Detection (VOD)
 ========================================
 
 Subscribers
@@ -123,33 +123,6 @@ Publishers
 Simulate observing objects and publish the observed objects (store all
 observed instances of all objects and cluster to form array of all found
 items)
-
-Real Visual Object Detection (RVOD)
-===================================
-
-Subscribers
------------
-
--   Camera
-
--   Estimated Position
-
-Publishers
-----------
-
--   Dict of all seen objects + estimated positions
-
-The same as SVOD but using camera for observing Objects.
-
-Navigation
-==========
-
-Subscribers
------------
-
--   location to travel to
-
-A\* pathfind to location and the drive there.
 
 Assignments
 ===========
