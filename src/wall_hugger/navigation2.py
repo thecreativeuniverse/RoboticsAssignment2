@@ -9,8 +9,7 @@ from copy import deepcopy
 
 object_threshold = 10
 threshold_met = False
-odom_recent = []
-odom_recent_limit = 2
+odom_recent = None
 cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
 odom_pub = rospy.Publisher("estimated_pose", PoseStamped, queue_size=1)
 prior_z = 0
@@ -37,11 +36,8 @@ def discovery_algorithm(base_data, averages):
     far right laser cone, reverse immediately then stop and rotate left to avoid them.
     -   the lasers detect an average of below 0.4 in the middle-left laser cones or below 0.45 on the far right left 
     laser cone, reverse immediately then stop and rotate right to avoid them.
-    -   the lasers detect an average of above 0.4 in the forward facing laser cone, move forwards but slowly drift the 
+    -   the lasers detect an average of equal to or above 0.4 in the forward facing laser cone, move forwards but slowly drift the 
     angular velocity so the robot does some exploration in a non-straight line.
-    -   the odometry pose of the robot hasn't changed, meaning the robot likely isn't moving right now, so it will reverse
-    with some random angular velocity to try and get it unstuck.
-    -   Otherwise, reverse
     '''
     global prior_z
 
@@ -70,27 +66,14 @@ def discovery_algorithm(base_data, averages):
             base_data.angular.z = (random.random() * 0.2) - 0.1
         prior_z = base_data.angular.z
 
-    elif (abs(odom_recent[0].pose.pose.position.x - odom_recent[1].pose.pose.position.x) <= 0.01) & (
-            abs(odom_recent[0].pose.pose.position.y - odom_recent[1].pose.pose.position.y) <= 0.01):
-        base_data.linear.x = -0.5
-        base_data.angular.z = (random.random() * 0.1) - 0.05
-        prior_z = 0
-
-    else:
-        base_data.linear.x = -1
-        prior_z = 0
-
     cmd_pub.publish(base_data)
 
 '''
-    Whenever the odom topic is published to, update the odom_recent list. If the list is at the limit, first pop
-    the oldest item in the list. Then append the new odom to the list.
+    Whenever the odom topic is published to, update the odom_recent item to contain the most recent odom object
 '''
 def odom_callback(msg):
     global odom_recent
-    if len(odom_recent) >= odom_recent_limit:
-        odom_recent.pop(0)
-    odom_recent.append(msg)
+    odom_recent = msg
 
 '''
     This performs the pose estimation of the robot. It is called everytime a new transformation is published by gmapping.
@@ -104,7 +87,7 @@ def tf_callback(msg):
     if (msg.transforms[0].child_frame_id != "odom" or msg.transforms[0].header.frame_id != "map"):
         return
     
-    odom = deepcopy(odom_recent[0])
+    odom = deepcopy(odom_recent)
 
     translation = msg.transforms[0].transform.translation
     rotation = msg.transforms[0].transform.rotation
