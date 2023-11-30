@@ -124,6 +124,18 @@ class OPS:
             best_cluster = cluster_weights.index(max(cluster_weights))
             estimated_pos = best_particle_per_cluster[best_cluster]
 
+        ###################################
+
+        # particles_weights = [object_locator.get_weight(particle, self.target_object, self.srg, known_object_locations)
+        #                      for particle in self.particle_cloud.points]
+        # if len(particles_weights) == 0:
+        #     return
+        # index = particles_weights.index(max(particles_weights))
+        # estimated_pos = self.particle_cloud.points[index]
+
+        estimated_pos.x = 69/20
+        estimated_pos.y = 420/20
+
         goal_pointcloud = PointCloud()
         goal_pointcloud.header.frame_id = "map"
         goal_pointcloud.header.stamp = rospy.Time.now()

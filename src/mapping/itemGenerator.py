@@ -4,7 +4,7 @@ import os
 import random
 
 
-def roomExists(item_location, room_list):
+def roomExists(item_location, room_list):  # checks if the room we want to place items in exists
     locations = []
     for i in range(len(room_list)):
         if item_location == room_list[i].type:
@@ -41,6 +41,7 @@ class ItemGenerator:
         self.itemRooms = []
         self.itemObjList = []
 
+        # here we open the csv file that tells us where items can be placed
         current_file = os.path.dirname(__file__)
         with open(os.path.join(current_file, 'ObjectList.csv')) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
@@ -53,6 +54,7 @@ class ItemGenerator:
                 else:
                     data.append(row)
 
+        # this code essentially turns the rows of the scv into objects that we can work with
         for i in range(len(data)):
             for j in range(len(types)):
                 if types[j] == "Item":
@@ -74,16 +76,18 @@ class ItemGenerator:
                     self.itemObjList[-1].addLocation(types[j], info)
 
     def generateObjects(self, room_list):
+        # for each item we check if it can be in a room and decide how much we have in said room
         for item in self.itemObjList:
             for i in range(len(item.rooms)):
                 if item.quantities[i][1] != 0:
 
                     room_indexes = roomExists(item.rooms[i], room_list)
                     data = [item.name, item.quantities[i], room_indexes]
-                    if len(room_indexes) > 0 :
+                    if len(room_indexes) > 0:
                         self.itemRooms.append(data)
 
         wall_gap = 0.5
+        # then we place the items within a certain distance from the edge of the room
         for i in range(len(room_list)):
             room_items = []
             for potentialItem in self.itemRooms:
@@ -94,12 +98,15 @@ class ItemGenerator:
                     top_left_corner = [top_left_corner[0] + wall_gap, top_left_corner[1] - wall_gap]
                     bottom_right_corner = [bottom_right_corner[0] - wall_gap, bottom_right_corner[1] + wall_gap]
                     for k in range(item_quantity):
-                        x_coord = random.randint(round(top_left_corner[0] * 1000), round(bottom_right_corner[0] * 1000)) / 1000
-                        y_coord = random.randint(round(bottom_right_corner[1] * 1000), round(top_left_corner[1] * 1000)) / 1000
+                        x_coord = random.randint(round(top_left_corner[0] * 1000),
+                                                 round(bottom_right_corner[0] * 1000)) / 1000
+                        y_coord = random.randint(round(bottom_right_corner[1] * 1000),
+                                                 round(top_left_corner[1] * 1000)) / 1000
                         room_items.append((potentialItem[0], x_coord, y_coord))
                         self.allItems.append((potentialItem[0], x_coord, y_coord))
 
     def saveToFile(self):
+        # the item list is then saved to a file to be accessed by other programs
         output_dir = os.path.join(os.path.dirname(__file__), "out")
         os.makedirs(output_dir, exist_ok=True)
         f = open(os.path.join(output_dir, "itemList.txt"), "a")

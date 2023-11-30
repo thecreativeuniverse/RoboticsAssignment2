@@ -62,7 +62,7 @@ class Corner:
         return self.occupied
 
 
-def getHighestWeightedRoom(rooms):
+def getHighestWeightedRoom(rooms):  # returns the index of the room  with the highest weight
     biggest = 0
     current = 0
     for i in range(len(rooms)):
@@ -73,7 +73,7 @@ def getHighestWeightedRoom(rooms):
     return current
 
 
-def checkOverlap(tortoise,corners1, corners2):
+def checkOverlap(tortoise, corners1, corners2):  # takes room's corners and checks if they are within each other
     overlap = False
     upper_left_corner = corners2[3]
     lower_right_corner = corners2[1]
@@ -84,7 +84,7 @@ def checkOverlap(tortoise,corners1, corners2):
     for corner in corners1:
 
         coords = corner.coords
-        if lower_x < coords[0] < upper_x and lower_y*-1 < coords[1]*-1 < upper_y*-1:
+        if lower_x < coords[0] < upper_x and lower_y * -1 < coords[1] * -1 < upper_y * -1:
             if (round(lower_x, 3) < round(coords[0], 3) < round(upper_x, 3) and
                     round(lower_y * -1, 3) < round(coords[1] * -1, 3) < round(upper_y * -1, 3)):
                 tortoise.drawOverlap(corner)
@@ -101,7 +101,8 @@ def checkOverlap(tortoise,corners1, corners2):
     # check if corners1 are in corners2
     return overlap
 
-def generateInitialRooms():
+
+def generateInitialRooms(): # decides how many of each room should be made
     rooms = []
 
     size = random.choice(["small", "medium", "large"])
@@ -144,7 +145,8 @@ def generateInitialRooms():
         rooms.append("corridor")
     return rooms, ensuite
 
-def generateRoomObjects(rooms):
+
+def generateRoomObjects(rooms): # converts the list of rooms into room objects with dimensions
     for i in range(len(rooms)):
         if rooms[i] == "bedroom":
             rooms[i] = Room(rooms[i], ["corridor", "main living space", "living room"], [8, 20], [2, 6], 1)
@@ -171,6 +173,7 @@ def generateRoomObjects(rooms):
             rooms[i] = Room(rooms[i], ["living room", "kitchen", "corridor"], [10, 20], [2, 4], 3)
 
         else:
-            rooms[i] = Room(rooms[i], ["main living space", "living room", "kitchen", "dining room"], [4, 10], [2, 3],4)
+            rooms[i] = Room(rooms[i], ["main living space", "living room", "kitchen", "dining room"], [4, 10], [2, 3],
+                            4)
 
     return rooms
