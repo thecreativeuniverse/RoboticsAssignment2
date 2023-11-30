@@ -1,5 +1,6 @@
 #!/bin/bash
 
+source devel/setup.sh
 catkin_make
 pip install -r requirements.txt
 python3 src/mapping/mapping.py

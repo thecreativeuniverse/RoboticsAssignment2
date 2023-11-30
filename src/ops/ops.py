@@ -102,24 +102,29 @@ class OPS:
         size = int(np.sqrt(len(simple_map_flat)))
         simple_map = np.split(simple_map_flat, size)
 
+        weights = np.array([object_locator.get_weight(particle, target=self.target_object, srg=self.srg,
+                                                 known_obj_locs=known_object_locations, simple_map=simple_map) for
+                       particle in particles])
+
         for k in unique_labels:
             if k == -1:
                 continue
             cluster = particles[labels == k]
+            current_weights = weights[labels == k].tolist()
             if len(cluster) == 0:
                 print("cluster of len 0!")
                 continue
-            weights = [object_locator.get_weight(particle, target=self.target_object, srg=self.srg,
-                                                 known_obj_locs=known_object_locations, simple_map=simple_map) for
-                       particle in cluster]
-            best_particle = cluster[weights.index(max(weights))]
-            ave_weight = sum(weights) / len(weights)
+            best_particle = cluster[current_weights.index(max(current_weights))]
+            ave_weight = sum(current_weights) / len(current_weights)
 
             cluster_weights.append(ave_weight)
             best_particle_per_cluster.append(best_particle)
 
-        best_cluster = cluster_weights.index(max(cluster_weights))
-        estimated_pos = best_particle_per_cluster[best_cluster]
+        if len(cluster_weights) == 0:
+            estimated_pos = particles[weights.tolist().index(max(weights))]
+        else:
+            best_cluster = cluster_weights.index(max(cluster_weights))
+            estimated_pos = best_particle_per_cluster[best_cluster]
 
         ###################################
 

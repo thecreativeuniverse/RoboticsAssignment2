@@ -9,6 +9,8 @@ from nav_msgs.msg import OccupancyGrid
 from sensor_msgs.msg import PointCloud
 from geometry_msgs.msg import Twist
 from tf.transformations import euler_from_quaternion
+from sensor_msgs.msg import LaserScan
+
 
 from PIL import Image
 
@@ -28,6 +30,8 @@ class ASTAR:
         rospy.Subscriber("goal_position", PointCloud, self.destination_callback, queue_size=1)
         # subscribes to robot pos
         rospy.Subscriber('/odom', Odometry, self.odom_callback, queue_size=1)
+        rospy.Subscriber('base_scan', LaserScan, self.lsCallback, queue_size=1)
+
 
         self.cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
 
@@ -45,7 +49,9 @@ class ASTAR:
         y = round(self.size / 2 + (msg.points[0].y*20))
 
         self.final_destination = [x, y]
+    def lsCallback(self, msg):
         self.hit_the_road()
+
 
     def odom_callback(self, msg):
         # get robot coordinates
@@ -84,6 +90,8 @@ class ASTAR:
         """
         self.route = self.actually_do_a_star()
         print(self.route)
+        # self.hit_the_road()
+
         self.generate_output_image()
 
     def bearing(self, x1, y1, x2, y2):
@@ -102,22 +110,21 @@ class ASTAR:
             print(self.route)
             self.current_destination[0] = self.route[-1][0]
             self.current_destination[1] = self.route[-1][1]
-            for location in range(len(self.route)-1):
+            for location in range(len(self.route)):
                 x_pos,y_pos,rotation = self.current_location
                 x1,y1 = self.route[location]
-                x2,y2 = self.route[location+1]
-                direction = self.bearing(x1,y1,x2,y2)
+                direction = self.bearing(self.current_location[0],self.current_destination[1],x1,y1)
                 if direction <0:
                     direction+=360
                 print(direction)
                 while not direction-10+360< (self.current_location[2]+180)%360+360 <direction+10+360:
-                    #print("rotation = ",self.current_location)
+                    print("rotation = ",self.current_location)
                     #print(direction-10+360< self.current_location[2]-90+360 <direction+10+360)
                     base_data = Twist()
                     base_data.angular.z = 0.5
                     self.cmd_pub.publish(base_data)
                 print(self.current_location,x1)
-                while not x1-1 < self.current_location[0] <x1+1 or not y1-1 < self.current_location[1] <y1+1:
+                while not x1-3 < self.current_location[0] <x1+3 or not y1-3 < self.current_location[1] <y1+3:
                         print("driving to:",x1,y1)
                         print("currently at",self.current_location)
                         base_data = Twist()
@@ -207,5 +214,4 @@ class ASTAR:
 
 if __name__ == "__main__":
     rospy.init_node('ASTAR', anonymous=True)
-
     ASTAR()
