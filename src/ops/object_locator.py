@@ -10,13 +10,12 @@ def norm_pdf(x, mean=0, var=0.5, multiplier=1):
 
 
 def get_prob(current_x, current_y, known_dists, simple_map_val):
-    if simple_map_val >= 0:
-        print(simple_map_val)
     prob = 0
     for ((known_x, known_y), mean, var) in known_dists:
         distance = np.sqrt((current_x - known_x) ** 2 + (current_y - known_y) ** 2)
         multiplier = 100 if mean == 0 else 0.1 if simple_map_val == 1 else 0.01 if simple_map_val == 100 else 1
         prob += (norm_pdf(distance, mean, np.sqrt(var), multiplier))
+
     return 0 if len(known_dists) == 0 else prob / len(known_dists)
 
 
@@ -42,5 +41,11 @@ def get_weight(particle=None, target=None, srg=None, known_obj_locs=None, simple
     to_add = int(round(len(simple_map[0]) / 2))
     x = int(round(particle.x * 20))
     y = int(round(particle.y * 20))
-    print(x,y,to_add)
-    return get_prob(x, y, known_obj_locs, simple_map[y + to_add][x + to_add])
+    # if x + to_add > len(simple_map[0]) or x + to_add < 0 or y + to_add > len(simple_map[0]) or y + to_add < 0:
+    #     return 0
+    if 0 <= x + to_add < len(simple_map[0]) or 0 <= y + to_add < len(simple_map[0]):
+        simple_map_val = simple_map[y+ to_add][x + to_add]
+    else:
+        simple_map_val = -1
+    # print(x,y,to_add)
+    return get_prob(x, y, known_obj_locs, simple_map_val)

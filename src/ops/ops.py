@@ -226,7 +226,6 @@ class OPS:
 
             sum_of_weights = sum(particles_weights)
             if sum_of_weights > 0:
-                print("sum of weights > 0")
                 # derive the variance for random particle generation based on the updated weights for all the particles
 
                 # normalise the particle weights
@@ -239,8 +238,6 @@ class OPS:
                 for i in range(1, len(particles_weights)):
                     cum_weights.append(cum_weights[i - 1] + particles_weights[i])
 
-                print(f"cum weight len {len(cum_weights)} num particles {len(particles_weights)}")
-
                 # calculate the increment size and initial threshold
                 tick_size = 1 / len(particles_weights)
                 current_threshold = np.random.uniform(0, tick_size)
@@ -248,21 +245,16 @@ class OPS:
                 # remove particles which don't have a high enough cumulative weight and replace them with variations of the
                 # previous particle that did have a high enough cumulative weight
                 i = 0
-                print(cum_weights)
-                print("tick size", tick_size)
                 for j in range(self.pose_array_size):
                     while i < len(cum_weights) and current_threshold > cum_weights[i]:
-                        print("2")
                         i += 1
 
                     if (i >= len(cum_weights)):
                         break
-                    print(i, len(particles_kept), len(particles_weights))
                     particles_kept.append(
                         self.generate_pose(pose=initial_particles[i], variance=(particles_weights[i] * 1000)))
                     current_threshold += tick_size
 
-                print("particles kept", len(particles_kept))
 
                 particles_weights = [
                     object_locator.get_weight(particle, self.target_object, srg, known_object_locations, simple_map) for particle in
@@ -270,7 +262,6 @@ class OPS:
 
                 particles_to_add = particles_to_keep - len(particles_kept)
                 if particles_to_add > 0:
-                    print("p to add", particles_to_add)
                     new_particles = [self.generate_pose() for _ in range(particles_to_add * 5)]
                     new_particles = [(p, object_locator.get_weight(p, self.target_object, srg, known_object_locations, simple_map)) for p in new_particles]
                     new_particles = sorted(new_particles, key=lambda x:x[1], reverse=True)
@@ -294,18 +285,14 @@ class OPS:
 
                 # Safety in case it picks 0, shouldn't really enter this
                 while current_threshold == 0:
-                    print("4")
                     current_threshold = np.random.uniform(0, tick_size)
 
                 # update the particle cloud to have the new particles
                 self.particle_cloud.points = particles_kept
             else:
-                print("sum of weights <= 0")
                 self.particle_cloud.points = [self.generate_pose() for _ in range(self.pose_array_size)]
             self.particle_cloud_pub.publish(self.particle_cloud)
-            print("publsiehd particle cloud")
             self.calculate_long_term_goal(known_object_locations=known_object_locations)
-            print("calculated long term goal")
         except Exception as e:
             print("SOMETHING WENT WRONG:", e)
             print(traceback.format_exc())
@@ -372,8 +359,8 @@ class OPS:
         width = 500 / 20
         height = 500 / 20
         if pose is not None:
-            return Point32(pose.x + np.random.normal(0, variance),
-                           pose.y + np.random.normal(0, variance),
+            return Point32(pose.x + np.random.normal(0, variance / 20),
+                           pose.y + np.random.normal(0, variance / 20),
                            0)
         else:
             return Point32((np.random.uniform(-width / 2, width / 2)), np.random.uniform(-height / 2, height / 2), 0)
