@@ -223,7 +223,7 @@ class OPS:
                     if i >= len(cum_weights):
                         break
                     particles_kept.append(
-                        self.generate_pose(pose=initial_particles[i], variance=(particles_weights[i])))
+                        self.generate_pose(pose=initial_particles[i], variance=(1/particles_weights[i])))
                     current_threshold += tick_size
 
                 particles_weights = [
@@ -232,9 +232,22 @@ class OPS:
                     particles_kept]
 
                 print("kept", len(particles_kept))
+
+                # particles_to_add = particles_to_keep - len(particles_kept)
+                # random_poses = [self.generate_pose() for _ in range(particles_to_add * 5)]
+                # random_poses = [
+                #     (p, object_locator.get_weight(p, self.target_object, srg, known_object_locations, simple_map)) for p
+                #     in random_poses]
+                # random_poses = sorted(random_poses, key=lambda x: x[1], reverse=True)
+                #
+                # for i in range(particles_to_add):
+                #     p, w = random_poses[i]
+                #     particles_kept.append(p)
+                #     particles_weights.append(w)
+
                 while len(particles_weights) < particles_to_keep:
                     new_poses = []
-                    for i in range(50):
+                    for i in range(20):
                         new_pose = self.generate_pose()
                         new_weight = object_locator.get_weight(new_pose, self.target_object, srg,
                                                                known_object_locations, simple_map)
@@ -243,10 +256,6 @@ class OPS:
 
                     particles_kept.append(new_poses[-1][0])
                     particles_weights.append(new_poses[-1][1])
-
-                # Safety in case it picks 0, shouldn't really enter this
-                while current_threshold == 0:
-                    current_threshold = np.random.uniform(0, tick_size)
 
                 # update the particle cloud to have the new particles
                 self.particle_cloud.points = particles_kept
@@ -319,8 +328,8 @@ class OPS:
         width = 500 / 20
         height = 500 / 20
         if pose is not None:
-            return Point32(pose.x + np.random.normal(0, variance * 20),
-                           pose.y + np.random.normal(0, variance * 20),
+            return Point32(pose.x + np.random.normal(0, variance / 100),
+                           pose.y + np.random.normal(0, variance / 100),
                            0)
         else:
             return Point32((np.random.uniform(-width / 2, width / 2)), np.random.uniform(-height / 2, height / 2), 0)

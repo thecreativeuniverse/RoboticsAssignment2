@@ -13,7 +13,7 @@ def get_prob(current_x, current_y, known_dists, simple_map_val):
     prob = 0
     for ((known_x, known_y), mean, var) in known_dists:
         distance = np.sqrt((current_x - known_x) ** 2 + (current_y - known_y) ** 2)
-        multiplier = 100 if mean == 0 else 0.1 if simple_map_val == 1 else 0.01 if simple_map_val == 100 else 1
+        multiplier = 1000 if mean == 0 else 0.1 if simple_map_val == 1 else 0.01 if simple_map_val == 100 else 1
         prob += (norm_pdf(distance, mean, np.sqrt(var), multiplier))
     return 0 if len(known_dists) == 0 else prob / len(known_dists)
 

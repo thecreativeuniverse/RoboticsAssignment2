@@ -223,7 +223,7 @@ class Item:
         self.num_clusters = 0
 
     def add(self, x, y):
-        self.all_locations.add((x, y))
+        self.all_locations.add((int(x), int(y)))
 
 
 if __name__ == '__main__':
