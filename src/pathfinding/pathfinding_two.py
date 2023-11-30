@@ -262,6 +262,8 @@ class ASTAR:
 
     def known_objects_callback(self, msg):
         known_objs = eval(msg.data)
+        #TODO this isn't working
+        print("target", self.target_object, [obj for obj, _, _ in known_objs])
         if len(known_objs) >= self.object_threshold or (self.target_object is not None and self.target_object in [obj for obj, _, _ in known_objs]):
             self.threshold_met = True
 
