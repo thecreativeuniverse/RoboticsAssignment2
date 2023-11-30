@@ -43,7 +43,7 @@ def get_weight(particle=None, target=None, srg=None, known_obj_locs=None, simple
     y = int(round(particle.y * 20))
     # if x + to_add > len(simple_map[0]) or x + to_add < 0 or y + to_add > len(simple_map[0]) or y + to_add < 0:
     #     return 0
-    if 0 <= x + to_add < len(simple_map[0]) or 0 <= y + to_add < len(simple_map[0]):
+    if 0 <= x + to_add < len(simple_map[0]) and 0 <= y + to_add < len(simple_map[0]):
         simple_map_val = simple_map[y+ to_add][x + to_add]
     else:
         simple_map_val = -1

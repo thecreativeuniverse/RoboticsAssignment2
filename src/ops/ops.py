@@ -42,7 +42,9 @@ class OPS:
         self.simple_map_radius = 250
 
         # generate pdf coords
-        self.simple_map = None
+        xs, ys = np.meshgrid(range(-self.simple_map_radius, self.simple_map_radius + 1),
+                             range(-self.simple_map_radius, self.simple_map_radius + 1), indexing='xy')
+        self.simple_map = np.array(list(zip(xs.ravel(), ys.ravel())), dtype='i4,i4').reshape(xs.shape)
 
         self.pdf_map = np.zeros([self.simple_map_radius * 2, self.simple_map_radius * 2])
 
@@ -99,10 +101,10 @@ class OPS:
         simple_map_flat = np.array(self.simple_map)
         size = int(np.sqrt(len(simple_map_flat)))
         simple_map = np.split(simple_map_flat, size)
-
-        weights = np.array([object_locator.get_weight(particle, target=self.target_object, srg=self.srg,
-                                                      known_obj_locs=known_object_locations, simple_map=simple_map) for
-                            particle in particles])
+        weights = [object_locator.get_weight(particle, target=self.target_object, srg=self.srg,
+                                             known_obj_locs=known_object_locations, simple_map=simple_map) for particle
+                   in particles]
+        weights = np.array(weights)
 
         for k in unique_labels:
             if k == -1:
@@ -118,21 +120,20 @@ class OPS:
             cluster_weights.append(ave_weight)
             best_particle_per_cluster.append(best_particle)
 
-        if len(cluster_weights) == 0:
-            estimated_pos = particles[weights.tolist().index(max(weights))]
-        else:
+        if len(cluster_weights) > 0:
             best_cluster = cluster_weights.index(max(cluster_weights))
             estimated_pos = best_particle_per_cluster[best_cluster]
+        else:
+            estimated_pos = particles[weights.tolist().index(max(weights))]
 
-        particles_weights = [object_locator.get_weight(particle, self.target_object, self.srg, known_object_locations, simple_map)
-                             for particle in self.particle_cloud.points]
-        if len(particles_weights) == 0:
-            return
-        index = particles_weights.index(max(particles_weights))
-        estimated_pos = self.particle_cloud.points[index]
+        ###################################
 
-        # estimated_pos.x = 69/20
-        # estimated_pos.y = 420/20
+        # particles_weights = [object_locator.get_weight(particle, self.target_object, self.srg, known_object_locations)
+        #                      for particle in self.particle_cloud.points]
+        # if len(particles_weights) == 0:
+        #     return
+        # index = particles_weights.index(max(particles_weights))
+        # estimated_pos = self.particle_cloud.points[index]
 
         goal_pointcloud = PointCloud()
         goal_pointcloud.header.frame_id = "map"
@@ -190,6 +191,13 @@ class OPS:
             sum_of_weights = sum(particles_weights)
             if sum_of_weights > 0:
                 # derive the variance for random particle generation based on the updated weights for all the particles
+                variance = 4
+
+                particles_to_remove = round(self.pose_array_size * 0.4)
+                for _ in range(particles_to_remove):
+                    index = particles_weights.index(min(particles_weights))
+                    del initial_particles[index]
+                    del particles_weights[index]
 
                 # normalise the particle weights
                 particles_weights = [w / sum_of_weights for w in particles_weights]
@@ -198,11 +206,11 @@ class OPS:
                 cum_weights = [current_cum_weight]
 
                 # calculate the cumulative weights for all particles
-                for i in range(1, len(particles_weights)):
+                for i in range(1, len(initial_particles)):
                     cum_weights.append(cum_weights[i - 1] + particles_weights[i])
 
                 # calculate the increment size and initial threshold
-                tick_size = 1 / len(particles_weights)
+                tick_size = 1 / len(initial_particles)
                 current_threshold = np.random.uniform(0, tick_size)
 
                 # remove particles which don't have a high enough cumulative weight and replace them with variations of the
@@ -212,40 +220,29 @@ class OPS:
                     while i < len(cum_weights) and current_threshold > cum_weights[i]:
                         i += 1
 
-                    if i >= len(initial_particles):
+                    if i >= len(cum_weights):
                         break
                     particles_kept.append(
-                        self.generate_pose(pose=initial_particles[i], variance=particles_weights[i] * 1000))
+                        self.generate_pose(pose=initial_particles[i], variance=(particles_weights[i])))
                     current_threshold += tick_size
+
                 particles_weights = [
                     object_locator.get_weight(particle, self.target_object, srg, known_object_locations, simple_map) for
-                    particle in particles_kept]
+                    particle in
+                    particles_kept]
 
-                particles_to_add = round(particles_to_keep * 0.3)
-                new_particles = [self.generate_pose() for _ in range(particles_to_add)]
-                particles_kept += new_particles
+                print("kept", len(particles_kept))
+                while len(particles_weights) < particles_to_keep:
+                    new_poses = []
+                    for i in range(50):
+                        new_pose = self.generate_pose()
+                        new_weight = object_locator.get_weight(new_pose, self.target_object, srg,
+                                                               known_object_locations, simple_map)
+                        new_poses.append((new_pose, new_weight))
+                    new_poses = sorted(new_poses, key=lambda x: x[1])
 
-                # new_particles = [
-                #     (p, object_locator.get_weight(p, self.target_object, srg, known_object_locations, simple_map))
-                #     for p in new_particles]
-                # new_particles = sorted(new_particles, key=lambda x: x[1], reverse=True)
-                # for i in range(particles_to_add):
-                #     pose, weight = new_particles[i]
-                #     particles_kept.append(pose)
-                #     particles_weights.append(weight)
-
-                # while len(particles_weights) < particles_to_keep:
-                #     print("3")
-                #     new_poses = []
-                #     for i in range(10):
-                #         new_pose = self.generate_pose()
-                #         new_weight = object_locator.get_weight(new_pose, self.target_object, srg,
-                #                                                known_object_locations, simple_map)
-                #         new_poses.append((new_pose, new_weight))
-                #     new_poses = sorted(new_poses, key=lambda x: x[1])
-                #
-                #     particles_kept.append(new_poses[-1][0])
-                #     particles_weights.append(new_poses[-1][1])
+                    particles_kept.append(new_poses[-1][0])
+                    particles_weights.append(new_poses[-1][1])
 
                 # Safety in case it picks 0, shouldn't really enter this
                 while current_threshold == 0:
@@ -260,7 +257,6 @@ class OPS:
         except Exception as e:
             print("SOMETHING WENT WRONG:", e)
             print(traceback.format_exc())
-            print(len(self.simple_map))
         finally:
             self.ALREADY_CALCULATING = False
 
@@ -323,8 +319,8 @@ class OPS:
         width = 500 / 20
         height = 500 / 20
         if pose is not None:
-            return Point32(pose.x + np.random.normal(0, variance / 20),
-                           pose.y + np.random.normal(0, variance / 20),
+            return Point32(pose.x + np.random.normal(0, variance * 20),
+                           pose.y + np.random.normal(0, variance * 20),
                            0)
         else:
             return Point32((np.random.uniform(-width / 2, width / 2)), np.random.uniform(-height / 2, height / 2), 0)
@@ -337,9 +333,10 @@ if __name__ == '__main__':
     rospy.spin()
 
     # # # debugging - not for main use
-    # known_objs = [('chair', (11.10544902720666, 97.51112942250421)), ('chair', (11.126679939714535, 97.48948050330165)), ('chair', (11.144313679729208, 97.47149957984041)), ('cushion', (9.200812072266388, 81.41388881371546)), ('cushion', (9.200812072266402, 81.41388881371543)), ('plant', (2.676967049210816, 86.44197972731075)), ('plant', (2.645287071793142, 86.4793008719277)), ('plant', (2.680969566384192, 86.43726455666729)), ('plant', (2.6809695663841993, 86.43726455666729)), ('mirror', (0.20081207226643016, 91.41388881371546)), ('mirror', (37.826970227110024, 95.06685147414359)), ('mirror', (28.69470407298681, 94.07991740180243)), ('mirror', (32.42482210337922, 93.07768706341845)), ('mirror', (32.42482210337923, 93.07768706341847)), ('bedside table', (24.9147988674178, 91.7104790068312)), ('bedside table', (24.872993212222738, 92.05937001094556)), ('bedside table', (24.612945887809218, 90.9248259058227)), ('bedside table', (24.875313214872705, 92.02650288390596)), ('television', (27.20081207226643, 80.41388881371539)), ('television', (27.20081207226643, 80.4138888137154)), ('lamp', (29.168996773132662, 82.4463305111741)), ('lamp', (29.184904422699532, 82.43010966244476)), ('sink', (100.50399611846619, 79.14411267817724)), ('sink', (100.5464165173112, 79.10085708156569)), ('sink', (101.08374156934795, 78.55295285781945)), ('shower', (106.0, 100.0)), ('bath', (90.03800592174511, 82.75709768180928)), ('bath', (94.61940899700576, 78.08549324776234)), ('bath', (99.20081207226643, 73.4138888137154)), ('toilet', (73.03800592174512, 86.75709768180928)), ('toilet', (77.61940899700576, 82.08549324776234)), ('toilet', (77.61940899700578, 82.08549324776234)), ('tumble dryer', (102.2008120722664, 70.4138888137154)), ('tumble dryer', (102.10536617486514, 70.51121390609138)), ('tumble dryer', (102.1371814739989, 70.47877220863273)), ('tumble dryer', (102.14778657371015, 70.46795830947984))]
+    # known_objs = [('oven', (11.0, 11.0)), ('table', (-0.9999999999999858, 18.999999999999986)), ('coffee table', (48.0, 33.0)), ('shelf', (-51.00001621119738, -62.99993801122765)), ('desk', (-81.32812499999997, -106.95312499999999)), ('television', (-35.98632812500003, -94.94970703125)), ('chair', (-39.999832019209876, -92.99830630794168)), ('cushion', (-39.00067917060491, -118.99980371070329)), ('plant', (-58.99999999996727, -109.99999999990182)), ('sink', (94.0, 2.000000000000014)), ('shower', (86.0, 34.000000000000014)), ('washing machine', (96.0, -3.000000000000014)), ('tumble dryer', (88.0, 2.000000000000014)), ('bath', (82.0, -16.000000000000043)), ('toilet', (80.0, 22.999999999999986)), ('sofa', (-30.0, -28.999999999999986)), ('fridge', (-15.999999999999986, -13.000000000000014)), ('lamp', (-48.0, -104.00000000000001)), ('mirror', (-77.99999995529649, -83.00000001490116)), ('wardrobe', (-57.99999999999999, -70.0)), ('bed', (-74.00000000000003, -123.99999999999999)), ('bedside table', (-51.009765625, -50.134765625)), ('kettle', (-55.00000000000001, -119.00000000000003))]
+    # #
     # ops_locator = OPS(filename="out/srg.json")
-    # target = "sink"
+    # target = "bedside table"
     # res = object_locator.calculate_likelihoods(simple_map=np.zeros(shape=(4000, 4000)), target=target, srg=ops_locator.srg,
     #                                            known_obj_locs=known_objs)
-    # ops_locator._plot(res, known_objs, target, figname="looking for sink adk", colors={})
+    # ops_locator._plot(res, known_objs, target, figname="somethibng", colors={})
