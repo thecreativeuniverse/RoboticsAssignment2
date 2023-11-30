@@ -33,8 +33,6 @@ Subscribers
 
 -   Laserscan
 
--   Generated real map (GRM)
-
 -   Particle cloud
 
 Publishers
@@ -103,17 +101,17 @@ an explored non wall square the square in question will be published.
 In the event the array of objects contains the desired object then it
 will be directly navigated to.
 
-Simulated Visual Object Detection (SVOD)
+Visual Object Detection (VOD)
 ========================================
 
 Subscribers
 -----------
 
--   Real Map
+-   objectList
 
 -   Estimated Position
 
--   Real Position
+-   Robot Odometry
 
 Publishers
 ----------
@@ -123,33 +121,6 @@ Publishers
 Simulate observing objects and publish the observed objects (store all
 observed instances of all objects and cluster to form array of all found
 items)
-
-Real Visual Object Detection (RVOD)
-===================================
-
-Subscribers
------------
-
--   Camera
-
--   Estimated Position
-
-Publishers
-----------
-
--   Dict of all seen objects + estimated positions
-
-The same as SVOD but using camera for observing Objects.
-
-Navigation
-==========
-
-Subscribers
------------
-
--   location to travel to
-
-A\* pathfind to location and the drive there.
 
 Assignments
 ===========
@@ -167,10 +138,9 @@ Assignments
 - estimated position: `estimated_pose`
 - particle cloud: `particle_cloud`
 - LaserScan: `base_scan`
-- SimpleMap: `simple_map`
-- RealMap: `real_map` (for SVOD only)
-- Real Position: `current_pose` (for SVOD only)
+- SimpleMap: `map`
+- objectList
+- Robot Odometry: `odom`
 - all seen objs + estimated positions: `known_objects`
 - location to travel to (long term goal from OPS): `goal_position`
-- camera: `camera`
 - target object (published at beginning of episode): `target_object`
