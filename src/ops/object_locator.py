@@ -15,7 +15,6 @@ def get_prob(current_x, current_y, known_dists, simple_map_val):
         distance = np.sqrt((current_x - known_x) ** 2 + (current_y - known_y) ** 2)
         multiplier = 100 if mean == 0 else 0.1 if simple_map_val == 1 else 0.01 if simple_map_val == 100 else 1
         prob += (norm_pdf(distance, mean, np.sqrt(var), multiplier))
-
     return 0 if len(known_dists) == 0 else prob / len(known_dists)
 
 
@@ -27,8 +26,9 @@ def calculate_likelihoods(simple_map=None, target=None, srg=None, known_obj_locs
     for obj, (x, y) in known_obj_locs:
         mean, var, _ = known_dists.get(obj)
         distributions.append(((x, y), mean, var))
-    map_size = round(len(simple_map[0]) / 2)
+    map_size = 250
     for x in range(-map_size, map_size):
+        print(x)
         for y in range(-map_size, map_size):
             prob_z = get_prob(x, y, distributions, 0)
             for m in range(10):

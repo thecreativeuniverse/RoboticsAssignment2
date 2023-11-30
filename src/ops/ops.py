@@ -46,15 +46,15 @@ class OPS:
 
         self.pdf_map = np.zeros([self.simple_map_radius * 2, self.simple_map_radius * 2])
 
-        self.particle_cloud = PointCloud()
-        self.particle_cloud.header.frame_id = "map"
-        self.particle_cloud.header.stamp = rospy.Time.now()
-
-        self.pose_array_size = 200
-
-        self.particle_cloud.points = [self.generate_pose() for _ in range(self.pose_array_size)]
-
-        self.particle_cloud_pub.publish(self.particle_cloud)
+        # self.particle_cloud = PointCloud()
+        # self.particle_cloud.header.frame_id = "map"
+        # self.particle_cloud.header.stamp = rospy.Time.now()
+        #
+        # self.pose_array_size = 200
+        #
+        # self.particle_cloud.points = [self.generate_pose() for _ in range(self.pose_array_size)]
+        #
+        # self.particle_cloud_pub.publish(self.particle_cloud)
 
         self.ALREADY_CALCULATING = False
 
@@ -101,8 +101,8 @@ class OPS:
         simple_map = np.split(simple_map_flat, size)
 
         weights = np.array([object_locator.get_weight(particle, target=self.target_object, srg=self.srg,
-                                                 known_obj_locs=known_object_locations, simple_map=simple_map) for
-                       particle in particles])
+                                                      known_obj_locs=known_object_locations, simple_map=simple_map) for
+                            particle in particles])
 
         for k in unique_labels:
             if k == -1:
@@ -124,15 +124,6 @@ class OPS:
             best_cluster = cluster_weights.index(max(cluster_weights))
             estimated_pos = best_particle_per_cluster[best_cluster]
 
-        ###################################
-
-        # particles_weights = [object_locator.get_weight(particle, self.target_object, self.srg, known_object_locations)
-        #                      for particle in self.particle_cloud.points]
-        # if len(particles_weights) == 0:
-        #     return
-        # index = particles_weights.index(max(particles_weights))
-        # estimated_pos = self.particle_cloud.points[index]
-
         goal_pointcloud = PointCloud()
         goal_pointcloud.header.frame_id = "map"
         goal_pointcloud.header.stamp = rospy.Time.now()
@@ -140,46 +131,9 @@ class OPS:
 
         self.goal_pos_pub.publish(goal_pointcloud)
 
-    #     if not self._validate_subbed_vars():
-    #         "invalid"
-    #         return
-    #     if self.ALREADY_CALCULATING:
-    #         return
-    #
-    #     self.ALREADY_CALCULATING = True
-    #
-    #
-    #     known_objects = self.known_objects
-    #     print(f"we know {len(known_objects)} objects and are looking for {self.target_object}")
-    #
-    #     srg = self.srg
-    #     known_object_locations = []
-    #
-    #     for obj in known_objects:
-    #         distance = srg.get_distance(obj[0], self.target_object)
-    #         known_object_locations.append((obj[1], distance, 50))
-    #
-    #     res = object_locator.calculate_likelihoods(simple_map=simple_map, target=self.target_object, srg=srg,
-    #                                                known_obj_locs=known_object_locations)
-    #
-    #     (x, y, prob) = max(res, key=lambda val: val[-1])
-    #
-    #     target_pointcloud = PointCloud()
-    #     # filling pointcloud header
-    #     header = Header()
-    #     header.stamp = rospy.Time.now()
-    #     header.frame_id = 'map'
-    #     target_pointcloud.header = header
-    #     target_pointcloud.points.append(Point32(x / 20, y / 20, 0))
-    #
-    #     self.goal_pos_pub.publish(target_pointcloud)
-    #     self.ALREADY_CALCULATING = False
-
     def update_particle_cloud(self):
-        print("updaitng particle cloud")
         self.particle_cloud_pub.publish(self.particle_cloud)
         if not self._validate_subbed_vars():
-            print("invalid")
             return
         if self.ALREADY_CALCULATING:
             print("ALREADY CALCULATING")
@@ -246,29 +200,29 @@ class OPS:
                 # previous particle that did have a high enough cumulative weight
                 i = 0
                 for j in range(self.pose_array_size):
+                    print(current_threshold)
                     while i < len(cum_weights) and current_threshold > cum_weights[i]:
                         i += 1
 
-                    if (i >= len(cum_weights)):
+                    if i >= len(initial_particles):
                         break
                     particles_kept.append(
-                        self.generate_pose(pose=initial_particles[i], variance=(particles_weights[i] * 1000)))
+                        self.generate_pose(pose=initial_particles[i], variance=particles_weights[i] * 1000))
                     current_threshold += tick_size
-
-
                 particles_weights = [
-                    object_locator.get_weight(particle, self.target_object, srg, known_object_locations, simple_map) for particle in
-                    particles_kept]
+                    object_locator.get_weight(particle, self.target_object, srg, known_object_locations, simple_map) for
+                    particle in particles_kept]
 
-                particles_to_add = particles_to_keep - len(particles_kept)
-                if particles_to_add > 0:
-                    new_particles = [self.generate_pose() for _ in range(particles_to_add * 5)]
-                    new_particles = [(p, object_locator.get_weight(p, self.target_object, srg, known_object_locations, simple_map)) for p in new_particles]
-                    new_particles = sorted(new_particles, key=lambda x:x[1], reverse=True)
-                    for i in range(particles_to_add):
-                        pose, weight = new_particles[i]
-                        particles_kept.append(pose)
-                        particles_weights.append(weight)
+                particles_to_add = round(particles_to_keep * 0.3)
+                new_particles = [self.generate_pose() for _ in range(particles_to_add * 5)]
+                new_particles = [
+                    (p, object_locator.get_weight(p, self.target_object, srg, known_object_locations, simple_map))
+                    for p in new_particles]
+                new_particles = sorted(new_particles, key=lambda x: x[1], reverse=True)
+                for i in range(particles_to_add):
+                    pose, weight = new_particles[i]
+                    particles_kept.append(pose)
+                    particles_weights.append(weight)
 
                 # while len(particles_weights) < particles_to_keep:
                 #     print("3")
@@ -367,16 +321,15 @@ class OPS:
 
 
 if __name__ == '__main__':
-    train = '--train' in sys.argv
-    rospy.init_node('ops', anonymous=True)
-    ops_locator = OPS(train=train, filename="out/srg.json")
-    rospy.spin()
+    # train = '--train' in sys.argv
+    # rospy.init_node('ops', anonymous=True)
+    # ops_locator = OPS(train=train, filename="out/srg.json")
+    # rospy.spin()
 
-    # # # debugging - not for main use
-    # known_objs = [('oven', (11.0, 11.0)), ('table', (-0.9999999999999858, 18.999999999999986)), ('coffee table', (48.0, 33.0)), ('shelf', (-51.00001621119738, -62.99993801122765)), ('desk', (-81.32812499999997, -106.95312499999999)), ('television', (-35.98632812500003, -94.94970703125)), ('chair', (-39.999832019209876, -92.99830630794168)), ('cushion', (-39.00067917060491, -118.99980371070329)), ('plant', (-58.99999999996727, -109.99999999990182)), ('sink', (94.0, 2.000000000000014)), ('shower', (86.0, 34.000000000000014)), ('washing machine', (96.0, -3.000000000000014)), ('tumble dryer', (88.0, 2.000000000000014)), ('bath', (82.0, -16.000000000000043)), ('toilet', (80.0, 22.999999999999986)), ('sofa', (-30.0, -28.999999999999986)), ('fridge', (-15.999999999999986, -13.000000000000014)), ('lamp', (-48.0, -104.00000000000001)), ('mirror', (-77.99999995529649, -83.00000001490116)), ('wardrobe', (-57.99999999999999, -70.0)), ('bed', (-74.00000000000003, -123.99999999999999)), ('bedside table', (-51.009765625, -50.134765625)), ('kettle', (-55.00000000000001, -119.00000000000003))]
-    # #
-    # ops_locator = OPS(filename="out/srg.json")
-    # target = "bedside table"
-    # res = object_locator.calculate_likelihoods(simple_map=np.zeros(shape=(4000, 4000)), target=target, srg=ops_locator.srg,
-    #                                            known_obj_locs=known_objs)
-    # ops_locator._plot(res, known_objs, target, figname="somethibng", colors={})
+    # # debugging - not for main use
+    known_objs = [('chair', (11.10544902720666, 97.51112942250421)), ('chair', (11.126679939714535, 97.48948050330165)), ('chair', (11.144313679729208, 97.47149957984041)), ('cushion', (9.200812072266388, 81.41388881371546)), ('cushion', (9.200812072266402, 81.41388881371543)), ('plant', (2.676967049210816, 86.44197972731075)), ('plant', (2.645287071793142, 86.4793008719277)), ('plant', (2.680969566384192, 86.43726455666729)), ('plant', (2.6809695663841993, 86.43726455666729)), ('mirror', (0.20081207226643016, 91.41388881371546)), ('mirror', (37.826970227110024, 95.06685147414359)), ('mirror', (28.69470407298681, 94.07991740180243)), ('mirror', (32.42482210337922, 93.07768706341845)), ('mirror', (32.42482210337923, 93.07768706341847)), ('bedside table', (24.9147988674178, 91.7104790068312)), ('bedside table', (24.872993212222738, 92.05937001094556)), ('bedside table', (24.612945887809218, 90.9248259058227)), ('bedside table', (24.875313214872705, 92.02650288390596)), ('television', (27.20081207226643, 80.41388881371539)), ('television', (27.20081207226643, 80.4138888137154)), ('lamp', (29.168996773132662, 82.4463305111741)), ('lamp', (29.184904422699532, 82.43010966244476)), ('sink', (100.50399611846619, 79.14411267817724)), ('sink', (100.5464165173112, 79.10085708156569)), ('sink', (101.08374156934795, 78.55295285781945)), ('shower', (106.0, 100.0)), ('bath', (90.03800592174511, 82.75709768180928)), ('bath', (94.61940899700576, 78.08549324776234)), ('bath', (99.20081207226643, 73.4138888137154)), ('toilet', (73.03800592174512, 86.75709768180928)), ('toilet', (77.61940899700576, 82.08549324776234)), ('toilet', (77.61940899700578, 82.08549324776234)), ('tumble dryer', (102.2008120722664, 70.4138888137154)), ('tumble dryer', (102.10536617486514, 70.51121390609138)), ('tumble dryer', (102.1371814739989, 70.47877220863273)), ('tumble dryer', (102.14778657371015, 70.46795830947984))]
+    ops_locator = OPS(filename="out/srg.json")
+    target = "sink"
+    res = object_locator.calculate_likelihoods(simple_map=np.zeros(shape=(4000, 4000)), target=target, srg=ops_locator.srg,
+                                               known_obj_locs=known_objs)
+    ops_locator._plot(res, known_objs, target, figname="looking for sink adk", colors={})
