@@ -106,7 +106,7 @@ def generate_maps():
     robot_pos = 'pioneer( pose [ ' + str(x_center) + ' ' + str(y_center) + ' 0 0 ] name "robot" color "blue")\n'
 
     world_path = os.path.dirname(__file__)
-    world_path = os.path.join(world_path, "../mapping/out/world.world")
+    world_path = os.path.join(world_path, "out/world.world")
 
     text = "  size [" + str(width) + " " + str(height) + " 0.5]\n"
 

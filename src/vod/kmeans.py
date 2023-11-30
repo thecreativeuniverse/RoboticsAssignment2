@@ -20,6 +20,9 @@ def generate_centers(item_list, min_clusters=2, max_clusters=10):
         kmeans = KMeans(n_clusters=test_k, n_init=10).fit(item_list)
         labels = kmeans.labels_
         silhouette_list.append(silhouette_score(item_list, labels, metric='euclidean'))
+
+    if len(silhouette_list) == 0:
+        return np.array(item_list)[item_list != [300,300]].tolist()
     actual_k = silhouette_list.index(max(silhouette_list)) + min_clusters
 
     kmeans = KMeans(n_clusters=actual_k, n_init=10)

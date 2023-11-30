@@ -29,8 +29,8 @@ def laser_callback(msg):
 
     # TODO: Prioritise entering nearby doorways.
 
-    if not threshold_met:
-        discovery_algorithm(base_data, averages)
+    # if not threshold_met:
+    #     discovery_algorithm(base_data, averages)
 
 def target_obj_callback(msg):
     target_object = msg.data

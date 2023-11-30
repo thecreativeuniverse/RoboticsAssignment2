@@ -8,8 +8,9 @@ import srg
 import mapping
 
 if __name__ == '__main__':
-    training_srg = srg.TrainingSRG("../ops/out/srg.json")
-    for i in range(1000):
+    num_to_train = 0 if len(sys.argv) <= 1 else int(sys.argv[1])
+    training_srg = srg.TrainingSRG()
+    for i in range(num_to_train):
         mapping.generate_maps()
         path = os.path.dirname(__file__)
         path = os.path.join(path, "../mapping/out/itemList.txt")
@@ -27,4 +28,4 @@ if __name__ == '__main__':
                     continue
                 distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
                 training_srg.update_weights(obj1, obj2, distance)
-        training_srg.save_in_file()
+    training_srg.save_in_file()

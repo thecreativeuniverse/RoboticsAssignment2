@@ -55,6 +55,7 @@ class SRG:
 class TrainingSRG(SRG):
 
     def __init__(self, filename=None):
+        self._srg = {}
         SRG.__init__(self, filename=filename)
 
     def update_weights(self, obj1, obj2, distance):
@@ -65,14 +66,14 @@ class TrainingSRG(SRG):
 
         var = (n / (n + 1)) * (var + (((mean - distance) ** 2) / n + 1))
         mean = ((mean * n) + distance) / (n + 1)
-        srg = self._srg
-        obj1_dict = srg.get(obj1)
+        current_srg = self._srg
+        obj1_dict = current_srg.get(obj1)
         obj1_dict.update({obj2: (mean, var, n + 1)})
-        srg.update({obj1: obj1_dict})
+        current_srg.update({obj1: obj1_dict})
         obj2_dict = self._srg.get(obj2)
         obj2_dict.update({obj1: (mean, var, n + 1)})
-        srg.update({obj2: obj2_dict})
-        self._srg = srg
+        current_srg.update({obj2: obj2_dict})
+        self._srg = current_srg
 
 
 if __name__ == "__main__":

@@ -41,10 +41,7 @@ class OPS:
 
         self.simple_map_radius = 250
 
-        # generate pdf coords
-        xs, ys = np.meshgrid(range(-self.simple_map_radius, self.simple_map_radius + 1),
-                             range(-self.simple_map_radius, self.simple_map_radius + 1), indexing='xy')
-        self.simple_map = np.array(list(zip(xs.ravel(), ys.ravel())), dtype='i4,i4').reshape(xs.shape)
+        self.simple_map = None
 
         self.pdf_map = np.zeros([self.simple_map_radius * 2, self.simple_map_radius * 2])
 
