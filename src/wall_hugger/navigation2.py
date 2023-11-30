@@ -7,7 +7,7 @@ from nav_msgs.msg import Odometry
 from tf.msg import tfMessage
 from copy import deepcopy
 
-object_threshold = 10
+object_threshold = 15
 threshold_met = False
 odom_recent = None
 cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)

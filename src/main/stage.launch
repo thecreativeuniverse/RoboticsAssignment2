@@ -27,4 +27,5 @@
 
     <node name="wall_hugger_nav" pkg="wall_hugger" type="navigation2.py" output="screen"/>
     <node name="wall_hugger_laser" pkg="wall_hugger" type="laserReader.py" />
+    <node name="pathfinder" pkg="pathfinding" output="screen" type="pathfinder.py" />
 </launch>
