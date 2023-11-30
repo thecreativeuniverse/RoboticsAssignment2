@@ -26,8 +26,8 @@ def get_distance(start, end):
 
 class ASTAR:
     def __init__(self):
-        print("SDTARTYING aSTART")
-        self.object_threshold = 15
+        print("STARTING aSTAR")
+        self.object_threshold = 40
         self.threshold_met = False
         rospy.Subscriber('known_objects', String, self.known_objects_callback)
 
@@ -37,7 +37,7 @@ class ASTAR:
         rospy.Subscriber("map", OccupancyGrid, self.map_callback, queue_size=1)
         rospy.Subscriber("goal_position", PointCloud, self.destination_callback, queue_size=1)
 
-        print("CHEKCING THRESHOLD")
+        print("CHECKING THRESHOLD")
         while (not self.threshold_met):
             sleep(0.5)
         print("CHECKED")
@@ -119,13 +119,13 @@ class ASTAR:
             distances = []
             for y in range(len(simple_map)):
                 for x in [temp for temp in range(len(simple_map[y])) if simple_map[y][temp] == 0]:
-                    next_to_nothnig = False
+                    next_to_nothing = False
                     for i in range(-1, 2):
-                        for j in range(-1,2):
-                            if simple_map[y+i][x+j] == -1:
-                                next_to_nothnig = True
+                        for j in range(-1, 2):
+                            if simple_map[y + i][x + j] == -1:
+                                next_to_nothing = True
                                 break
-                    if not next_to_nothnig:
+                    if not next_to_nothing:
                         continue
                     distances.append((get_distance(self.goal_location, (y, x)), x, y))
             dist, x, y = min(distances, key=lambda a: a[0])
@@ -139,7 +139,7 @@ class ASTAR:
         theta = math.atan2(x1 - x2, y1 - y2)
         return rad2deg * theta
 
-    def  hit_the_road(self, pathfinding_count):
+    def hit_the_road(self, pathfinding_count):
         print("Hitting the road")
         if self.pathfind_to is None:
             self.calculate_path()
@@ -148,8 +148,10 @@ class ASTAR:
             particle_cloud = PointCloud()
             particle_cloud.header.frame_id = "map"
             particle_cloud.header.stamp = rospy.Time.now()
-            particle_cloud.points = [Point32((self.pathfind_to[0] - (len(self.simple_map) / 2)) / 20, ((self.pathfind_to[1] - (len(self.simple_map) / 2)) / 20), 0)]
-            particle_cloud.points.append(Point32((self.goal_location[0] - (len(self.simple_map) / 2)) / 20, ((self.goal_location[1] - (len(self.simple_map) / 2)) / 20), 0))
+            particle_cloud.points = [Point32((self.pathfind_to[0] - (len(self.simple_map) / 2)) / 20,
+                                             ((self.pathfind_to[1] - (len(self.simple_map) / 2)) / 20), 0)]
+            particle_cloud.points.append(Point32((self.goal_location[0] - (len(self.simple_map) / 2)) / 20,
+                                                 ((self.goal_location[1] - (len(self.simple_map) / 2)) / 20), 0))
             self.target_publisher.publish(particle_cloud)
             print("published")
 
@@ -261,7 +263,7 @@ class ASTAR:
 
 
 if __name__ == "__main__":
-    print("INTITIALISING PATHFINDGER ERKJANSDKLNSDLKNSD")
+    print("INITIALIZING PATHFINDER ERKJANSDKLNSDLKNSD")
     rospy.init_node('pathfinder', anonymous=True)
     try:
         ASTAR()
