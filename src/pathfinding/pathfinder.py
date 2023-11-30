@@ -7,11 +7,12 @@ import numpy as np
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import OccupancyGrid
 from sensor_msgs.msg import PointCloud
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Point32
 from tf.transformations import euler_from_quaternion
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
 from time import sleep
+import traceback
 
 from PIL import Image
 
@@ -25,7 +26,7 @@ def get_distance(start, end):
 
 class ASTAR:
     def __init__(self):
-        self.object_threshold = 15
+        self.object_threshold = 15  
         self.threshold_met = False
         rospy.Subscriber('known_objects', String, self.known_objects_callback)
 
@@ -42,6 +43,8 @@ class ASTAR:
         # subscribes to robot pos
         rospy.Subscriber('/odom', Odometry, self.odom_callback, queue_size=1)
         rospy.Subscriber('base_scan', LaserScan, self.lsCallback, queue_size=1)
+
+        self.target_publisher = rospy.Publisher('astar_target', PointCloud, queue_size=1)
 
         self.cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
 
@@ -117,6 +120,18 @@ class ASTAR:
     def hit_the_road(self, pathfinding_count):
         print("Hitting the road")
         print(self.current_destination)
+
+        try:
+            particle_cloud = PointCloud()
+            particle_cloud.header.frame_id = "map"
+            particle_cloud.header.stamp = rospy.Time.now()
+            particle_cloud.points = [Point32(self.current_destination[0] / 20, self.current_destination[1] / 20, 0)]
+            self.target_publisher.publish(particle_cloud)
+            print("published")
+        except Exception as e:
+            print("error",e)
+            print(traceback.format_exc())
+
         # self.generate_output_image()
         if len(self.route) != 0:
             self.current_destination[0] = self.route[-1][0]
@@ -124,7 +139,7 @@ class ASTAR:
             for location in range(len(self.route)):
                 x_pos, y_pos, rotation = self.current_location
                 x1, y1 = self.route[location]
-                direction = self.bearing(self.current_location[0], self.current_destination[1], x1, y1)
+                direction = self.bearing(self.current_location[0], self.current_destination[1], x1, y1) 
                 if direction < 0:
                     direction += 360
                 while (not direction - 10 + 360 < (self.current_location[2]) % 360 + 360 < direction + 10 + 360
