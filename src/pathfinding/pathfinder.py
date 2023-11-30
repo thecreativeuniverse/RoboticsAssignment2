@@ -42,15 +42,21 @@ class ASTAR:
         self.size = 0  # size of map
         self.route =[]
         self.all_visited =[]
+
+        self.PATHFINDING_COUNT = 0
+
         rospy.spin()
 
     def destination_callback(self, msg):  # takes the x,y coordinates of from goal position and saves them to a variable
         x = round(self.size / 2 + (msg.points[0].x*20))
         y = round(self.size / 2 + (msg.points[0].y*20))
 
+        if get_distance((x,y), (self.final_destination[0], self.final_destination[1])) < 1:
+            return
+        self.PATHFINDING_COUNT += 1
         self.final_destination = [x, y]
     def lsCallback(self, msg):
-        self.hit_the_road()
+        self.hit_the_road(self.PATHFINDING_COUNT)
 
 
     def odom_callback(self, msg):
@@ -100,7 +106,7 @@ class ASTAR:
             return 0
         theta = math.atan2(x1 - x2, y1 - y2)
         return rad2deg * theta
-    def hit_the_road(self):
+    def hit_the_road(self, pathfinding_count):
         print("hitting the road")
         print(self.final_destination)
         self.generate_output_image()
@@ -117,14 +123,14 @@ class ASTAR:
                 if direction <0:
                     direction+=360
                 print(direction)
-                while not direction-10+360< (self.current_location[2]+180)%360+360 <direction+10+360:
+                while not direction-10+360< (self.current_location[2]+180)%360+360 <direction+10+360 and self.PATHFINDING_COUNT == pathfinding_count:
                     print("rotation = ",self.current_location)
                     #print(direction-10+360< self.current_location[2]-90+360 <direction+10+360)
                     base_data = Twist()
                     base_data.angular.z = 0.5
                     self.cmd_pub.publish(base_data)
                 print(self.current_location,x1)
-                while not x1-3 < self.current_location[0] <x1+3 or not y1-3 < self.current_location[1] <y1+3:
+                while not x1-3 < self.current_location[0] <x1+3 or not y1-3 < self.current_location[1] <y1+3 and self.PATHFINDING_COUNT == pathfinding_count:
                         print("driving to:",x1,y1)
                         print("currently at",self.current_location)
                         base_data = Twist()

@@ -42,9 +42,7 @@ class OPS:
         self.simple_map_radius = 250
 
         # generate pdf coords
-        xs, ys = np.meshgrid(range(-self.simple_map_radius, self.simple_map_radius + 1),
-                             range(-self.simple_map_radius, self.simple_map_radius + 1), indexing='xy')
-        self.simple_map = np.array(list(zip(xs.ravel(), ys.ravel())), dtype='i4,i4').reshape(xs.shape)
+        self.simple_map = None
 
         self.pdf_map = np.zeros([self.simple_map_radius * 2, self.simple_map_radius * 2])
 
@@ -178,10 +176,13 @@ class OPS:
     #     self.ALREADY_CALCULATING = False
 
     def update_particle_cloud(self):
+        print("updaitng particle cloud")
         self.particle_cloud_pub.publish(self.particle_cloud)
         if not self._validate_subbed_vars():
+            print("invalid")
             return
         if self.ALREADY_CALCULATING:
+            print("ALREADY CALCULATING")
             return
         self.ALREADY_CALCULATING = True
 
@@ -225,8 +226,8 @@ class OPS:
 
             sum_of_weights = sum(particles_weights)
             if sum_of_weights > 0:
+                print("sum of weights > 0")
                 # derive the variance for random particle generation based on the updated weights for all the particles
-                variance = 4
 
                 # normalise the particle weights
                 particles_weights = [w / sum_of_weights for w in particles_weights]
@@ -235,52 +236,76 @@ class OPS:
                 cum_weights = [current_cum_weight]
 
                 # calculate the cumulative weights for all particles
-                for i in range(1, self.pose_array_size):
+                for i in range(1, len(particles_weights)):
                     cum_weights.append(cum_weights[i - 1] + particles_weights[i])
 
+                print(f"cum weight len {len(cum_weights)} num particles {len(particles_weights)}")
+
                 # calculate the increment size and initial threshold
-                tick_size = 1 / self.pose_array_size
+                tick_size = 1 / len(particles_weights)
                 current_threshold = np.random.uniform(0, tick_size)
 
                 # remove particles which don't have a high enough cumulative weight and replace them with variations of the
                 # previous particle that did have a high enough cumulative weight
                 i = 0
+                print(cum_weights)
+                print("tick size", tick_size)
                 for j in range(self.pose_array_size):
                     while i < len(cum_weights) and current_threshold > cum_weights[i]:
+                        print("2")
                         i += 1
 
-                    if i < len(cum_weights):
+                    if (i >= len(cum_weights)):
                         break
+                    print(i, len(particles_kept), len(particles_weights))
                     particles_kept.append(
-                        self.generate_pose(pose=particles_kept[i], variance=(particles_weights[i] * 1000)))
+                        self.generate_pose(pose=initial_particles[i], variance=(particles_weights[i] * 1000)))
                     current_threshold += tick_size
+
+                print("particles kept", len(particles_kept))
 
                 particles_weights = [
                     object_locator.get_weight(particle, self.target_object, srg, known_object_locations, simple_map) for particle in
                     particles_kept]
 
-                while len(particles_weights) < particles_to_keep:
-                    new_poses = []
-                    for i in range(50):
-                        new_pose = self.generate_pose()
-                        new_weight = object_locator.get_weight(new_pose, self.target_object, srg,
-                                                               known_object_locations, simple_map)
-                        new_poses.append((new_pose, new_weight))
-                    new_poses = sorted(new_poses, key=lambda x: x[1])
+                particles_to_add = particles_to_keep - len(particles_kept)
+                if particles_to_add > 0:
+                    print("p to add", particles_to_add)
+                    new_particles = [self.generate_pose() for _ in range(particles_to_add * 5)]
+                    new_particles = [(p, object_locator.get_weight(p, self.target_object, srg, known_object_locations, simple_map)) for p in new_particles]
+                    new_particles = sorted(new_particles, key=lambda x:x[1], reverse=True)
+                    for i in range(particles_to_add):
+                        pose, weight = new_particles[i]
+                        particles_kept.append(pose)
+                        particles_weights.append(weight)
 
-                    particles_kept.append(new_poses[-1][0])
-                    particles_weights.append(new_poses[-1][1])
+                # while len(particles_weights) < particles_to_keep:
+                #     print("3")
+                #     new_poses = []
+                #     for i in range(10):
+                #         new_pose = self.generate_pose()
+                #         new_weight = object_locator.get_weight(new_pose, self.target_object, srg,
+                #                                                known_object_locations, simple_map)
+                #         new_poses.append((new_pose, new_weight))
+                #     new_poses = sorted(new_poses, key=lambda x: x[1])
+                #
+                #     particles_kept.append(new_poses[-1][0])
+                #     particles_weights.append(new_poses[-1][1])
 
                 # Safety in case it picks 0, shouldn't really enter this
                 while current_threshold == 0:
+                    print("4")
                     current_threshold = np.random.uniform(0, tick_size)
 
                 # update the particle cloud to have the new particles
                 self.particle_cloud.points = particles_kept
             else:
+                print("sum of weights <= 0")
                 self.particle_cloud.points = [self.generate_pose() for _ in range(self.pose_array_size)]
             self.particle_cloud_pub.publish(self.particle_cloud)
+            print("publsiehd particle cloud")
             self.calculate_long_term_goal(known_object_locations=known_object_locations)
+            print("calculated long term goal")
         except Exception as e:
             print("SOMETHING WENT WRONG:", e)
             print(traceback.format_exc())

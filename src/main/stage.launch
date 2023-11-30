@@ -3,10 +3,10 @@
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find socspioneer)/config/demo.rviz"/>
     <node name="stage" pkg="stage_ros" type="stageros" args="--clock $(find mapping)/out/world.world"/>
 
-    <arg name="map_file" value="$(find mapping)/out/world.yaml">
-    </arg> 
-    <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)"> 
-    </node> 
+<!--     <arg name="map_file" value="$(find mapping)/out/world.yaml"> -->
+<!--     </arg>  -->
+<!--     <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)">  -->
+<!--     </node>  -->
 
     <!-- dynamic map generation -->
     <node name="gmapping_node" pkg="gmapping" type="slam_gmapping" respawn="false">
