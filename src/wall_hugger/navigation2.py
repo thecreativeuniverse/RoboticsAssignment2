@@ -14,6 +14,7 @@ odom_recent = None
 cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
 odom_pub = rospy.Publisher("estimated_pose", PoseStamped, queue_size=1)
 prior_z = 0
+target_object = None
 
 '''
     Called everytime we receive laser readings, checks if the object threshold has been met, and 
@@ -21,7 +22,7 @@ prior_z = 0
 '''
 
 
-def callback(msg):
+def laser_callback(msg):
     # Averages: right, middle right, middle, middle left, left
     averages = [msg.data[4], msg.data[5], msg.data[6], msg.data[7], msg.data[8]]
     base_data = Twist()
@@ -30,6 +31,9 @@ def callback(msg):
 
     if not threshold_met:
         discovery_algorithm(base_data, averages)
+
+def target_obj_callback(msg):
+    target_object = msg.data
 
 
 # Tells the robot how to move based on laser inputs.
@@ -152,8 +156,8 @@ def quaternion_multiply(Q0, Q1):
 
 
 def known_objects_callback(msg):
-    if len(eval(msg.data)) >= object_threshold:
-        print("Threshold met")
+    known_objs = eval(msg.data)
+    if len(known_objs) >= object_threshold or (target_object is not None and target_object in [obj for obj, _, _ in known_objs]):
         global threshold_met
         threshold_met = True
 
@@ -163,6 +167,7 @@ def listener():
     rospy.Subscriber('odom', Odometry, odom_callback)
     rospy.Subscriber('tf', tfMessage, tf_callback)
     rospy.Subscriber('known_objects', String, known_objects_callback)
+    rospy.Subscriber('target_object', String, target_obj_callback)
 
     base_data = Twist()
     base_data.angular.z = 0.75
@@ -171,7 +176,7 @@ def listener():
     while time.time() < endTime:
         cmd_pub.publish(base_data)
 
-    rospy.Subscriber('proximity_sensor', Float64MultiArray, callback)
+    rospy.Subscriber('proximity_sensor', Float64MultiArray, laser_callback)
 
     rospy.spin()
 

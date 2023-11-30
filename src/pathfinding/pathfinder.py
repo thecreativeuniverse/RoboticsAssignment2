@@ -26,9 +26,12 @@ def get_distance(start, end):
 
 class ASTAR:
     def __init__(self):
-        self.object_threshold = 15  
+        self.object_threshold = 15
         self.threshold_met = False
+        self.target_object = None
+
         rospy.Subscriber('known_objects', String, self.known_objects_callback)
+        rospy.Subscriber('target_object', String, self.target_callback)
 
         self.simple_map = []  # 2d map of space
         self.size = None  # size of map
@@ -56,6 +59,9 @@ class ASTAR:
         self.PATHFINDING_COUNT = 0
 
         rospy.spin()
+
+    def target_callback(self, msg):
+        self.target_object = msg.data
 
     def destination_callback(self, msg):  # takes the x,y coordinates of from goal position and saves them to a variable
         x = round(self.size / 2 + (msg.points[0].x * 20)) + 1
@@ -139,13 +145,13 @@ class ASTAR:
             for location in range(len(self.route)):
                 x_pos, y_pos, rotation = self.current_location
                 x1, y1 = self.route[location]
-                direction = self.bearing(self.current_location[0], self.current_destination[1], x1, y1) 
+                direction = self.bearing(self.current_location[0], self.current_destination[1], x1, y1)
                 if direction < 0:
                     direction += 360
                 while (not direction - 10 + 360 < (self.current_location[2]) % 360 + 360 < direction + 10 + 360
                        and self.PATHFINDING_COUNT == pathfinding_count):
                     # print(direction-10+360< self.current_location[2]-90+360 <direction+10+360)
-                    base_data = Twist() 
+                    base_data = Twist()
                     base_data.angular.z = 0.5
                     self.cmd_pub.publish(base_data)
                 while not x1 - 0.5 < self.current_location[0] < x1 + 0.5 or not y1 - 0.5 < self.current_location[
@@ -233,7 +239,8 @@ class ASTAR:
         pil_image.save("test.png", "PNG")
 
     def known_objects_callback(self, msg):
-        if len(eval(msg.data)) >= self.object_threshold:
+        known_objs = eval(msg.data)
+        if len(known_objs) >= self.object_threshold or (self.target_object is not None and self.target_object in [obj for obj, _, _ in known_objs]):
             self.threshold_met = True
 
 

@@ -26,10 +26,11 @@ def get_distance(start, end):
 
 class ASTAR:
     def __init__(self):
-        print("STARTING aSTAR")
         self.object_threshold = 40
         self.threshold_met = False
+        self.target_object = None
         rospy.Subscriber('known_objects', String, self.known_objects_callback)
+        rospy.Subscriber('target_object', String, self.target_callback)
 
         self.simple_map = None  # 2d map of space
         self.size = None  # size of map
@@ -37,10 +38,10 @@ class ASTAR:
         rospy.Subscriber("map", OccupancyGrid, self.map_callback, queue_size=1)
         rospy.Subscriber("goal_position", PointCloud, self.destination_callback, queue_size=1)
 
-        print("CHECKING THRESHOLD")
-        while (not self.threshold_met):
+        print("waiting for observations")
+        while not self.threshold_met:
             sleep(0.5)
-        print("CHECKED")
+        print("Seeen it alll")
 
         # subscribes to final destination
         # subscribes to robot pos
@@ -58,17 +59,23 @@ class ASTAR:
     # takes the x,y coordinates of from goal position and saves them to a variable
     def destination_callback(self, msg):
         x = round(self.size / 2 + (msg.points[0].x * 20))
-        y = round(self.size / 2 - (msg.points[0].y * 20))
+        y = round(self.size / 2 + (msg.points[0].y * 20))
         if not self.threshold_met:
             return
         if self.goal_location is not None:
             if get_distance((x, y), self.goal_location) < 1:
                 return
         self.PATHFINDING_COUNT += 1
+        self.calculate_path()
         self.goal_location = (x, y)
 
     def ls_callback(self, msg):
         self.hit_the_road(self.PATHFINDING_COUNT)
+
+
+    def target_callback(self, msg):
+        print("received target ", msg.data)
+        self.target_object = msg.data
 
     def odom_callback(self, msg):
         # get robot coordinates
@@ -105,17 +112,14 @@ class ASTAR:
         3) simplify the directions
         4) drive there
         """
-        print("calculating path")
         simple_map = self.simple_map
         if simple_map is None:
             return
 
         goal_x, goal_y = self.goal_location
         if simple_map[goal_y][goal_x] >= 0:
-            print("Already in view. ")
             self.pathfind_to = (goal_x, goal_y)
         else:
-            print("To find val outside map")
             distances = []
             for y in range(len(simple_map)):
                 for x in [temp for temp in range(len(simple_map[y])) if simple_map[y][temp] == 0]:
@@ -140,7 +144,7 @@ class ASTAR:
         return rad2deg * theta
 
     def hit_the_road(self, pathfinding_count):
-        print("Hitting the road")
+        print("Hitting the road") #debugging
         if self.pathfind_to is None:
             self.calculate_path()
             return
@@ -153,34 +157,34 @@ class ASTAR:
             particle_cloud.points.append(Point32((self.goal_location[0] - (len(self.simple_map) / 2)) / 20,
                                                  ((self.goal_location[1] - (len(self.simple_map) / 2)) / 20), 0))
             self.target_publisher.publish(particle_cloud)
-            print("published")
 
-            # # self.generate_output_image()
-            # if len(self.route) != 0:
-            #     self.current_destination[0] = self.route[-1][0]
-            #     self.current_destination[1] = self.route[-1][1]
-            #     for location in range(len(self.route)):
-            #         x_pos, y_pos, rotation = self.current_location
-            #         x1, y1 = self.route[location]
-            #         direction = self.bearing(self.current_location[0], self.current_destination[1], x1, y1)
-            #         if direction < 0:
-            #             direction += 360
-            #         while (not direction - 10 + 360 < (self.current_location[2]) % 360 + 360 < direction + 10 + 360
-            #                and self.PATHFINDING_COUNT == pathfinding_count):
-            #             # print(direction-10+360< self.current_location[2]-90+360 <direction+10+360)
-            #             base_data = Twist()
-            #             base_data.angular.z = 0.5
-            #             self.cmd_pub.publish(base_data)
-            #         while not x1 - 0.5 < self.current_location[0] < x1 + 0.5 or not y1 - 0.5 < self.current_location[1] < y1 + 0.5 and self.PATHFINDING_COUNT == pathfinding_count:
-            #             base_data = Twist()
-            #             base_data.linear.x = 0.2
-            #             self.cmd_pub.publish(base_data)
+            # self.generate_output_image()
+            route = self.actually_do_a_star()
+
+            if len(route) != 0:
+                for location in range(len(route)):
+                    x_pos, y_pos, rotation = self.current_location
+                    x1, y1 = route[location]
+                    direction = self.bearing(x_pos, y_pos, x1, y1)
+                    if direction < 0:
+                        direction += 360
+                    while (not direction - 5 + 360 < (self.current_location[2]) % 360 + 360 < direction + 5 + 360
+                           and self.PATHFINDING_COUNT == pathfinding_count):
+                        print("bearing", direction, self.current_location[2])
+                        base_data = Twist()
+                        base_data.angular.z = 0.5
+                        if self.PATHFINDING_COUNT != pathfinding_count:
+
+                            return
+                    while not x1 - 0.5 < self.current_location[0] < x1 + 0.5 or not y1 - 0.5 < self.current_location[1] < y1 + 0.5 and self.PATHFINDING_COUNT == pathfinding_count:
+                        base_data = Twist()
+                        base_data.linear.x = 0.2
+                        self.cmd_pub.publish(base_data)
         except Exception as e:
             print("error", e)
             print(traceback.format_exc())
 
     def is_wall_nearby(self, x, y):  # checks if a square is nearby to a wall
-
         rows, cols = len(self.simple_map), len(self.simple_map[0])
         for i in range(max(0, x - 2), min(rows, x + 3)):
             for j in range(max(0, y - 2), min(cols, y + 3)):
@@ -196,7 +200,7 @@ class ASTAR:
         start_x, start_y, _ = self.current_location
         visited.append((start_x, start_y,))
         connections.append(0)
-        end_x, end_y = self.final_destination
+        end_x, end_y = self.pathfind_to
         end_condition = False
         while not end_condition:
             potential_locations = []
@@ -225,7 +229,6 @@ class ASTAR:
             if self.simple_map[new_coordinates[1]][new_coordinates[0]] == -1 or new_coordinates == (
                     end_x, end_y) or len(visited) > 100:
                 end_condition = True
-                self.all_visited = visited
                 # now we generate a path from the start to the final value in our visited list
                 current_node = -1
                 while current_node != 0:
@@ -234,6 +237,7 @@ class ASTAR:
                 path.append(visited[current_node])
                 path.reverse()
                 return path
+        return path
 
     def map_callback(self, msg):
         data = msg.data
@@ -242,7 +246,6 @@ class ASTAR:
         self.simple_map = np.split(data, self.size)
 
     def generate_output_image(self):
-
         robot_x, robot_y, robot_theta = self.current_location
         robot_x = round(robot_x)
         robot_y = round(robot_y)
@@ -258,16 +261,15 @@ class ASTAR:
         pil_image.save("test.png", "PNG")
 
     def known_objects_callback(self, msg):
-        if len(eval(msg.data)) >= self.object_threshold:
+        known_objs = eval(msg.data)
+        if len(known_objs) >= self.object_threshold or (self.target_object is not None and self.target_object in [obj for obj, _, _ in known_objs]):
             self.threshold_met = True
 
 
 if __name__ == "__main__":
-    print("INITIALIZING PATHFINDER ERKJANSDKLNSDLKNSD")
     rospy.init_node('pathfinder', anonymous=True)
     try:
         ASTAR()
     except Exception as e:
-        print("ECCVELPTION in PATHINGING", e)
         print(traceback.format_exc())
     rospy.spin()
