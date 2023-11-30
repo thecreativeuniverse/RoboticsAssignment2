@@ -37,11 +37,10 @@ def discovery_algorithm(base_data, averages):
     far right laser cone, reverse immediately then stop and rotate left to avoid them.
     -   the lasers detect an average of below 0.4 in the middle-left laser cones or below 0.45 on the far right left 
     laser cone, reverse immediately then stop and rotate right to avoid them.
-    -   the lasers detect an average of above 0.4 in the forward facing laser cone, move forwards but slowly drift the 
-    angular velocity so the robot does some exploration in a non-straight line.
-    -   the odometry pose of the robot hasn't changed, meaning the robot likely isn't moving right now, so it will reverse
+        -   the odometry pose of the robot hasn't changed, meaning the robot likely isn't moving right now, so it will reverse
     with some random angular velocity to try and get it unstuck.
-    -   Otherwise, reverse
+    -   the lasers detect an average of equal to or above 0.4 in the forward facing laser cone, move forwards but slowly drift the 
+    angular velocity so the robot does some exploration in a non-straight line.
     '''
     global prior_z
 
@@ -57,6 +56,12 @@ def discovery_algorithm(base_data, averages):
         cmd_pub.publish(base_data)
         prior_z = 0
 
+    elif (abs(odom_recent[0].pose.pose.position.x - odom_recent[1].pose.pose.position.x) <= 0.01) & (
+            abs(odom_recent[0].pose.pose.position.y - odom_recent[1].pose.pose.position.y) <= 0.01):
+        base_data.linear.x = -0.5
+        base_data.angular.z = (random.random() * 0.1) - 0.05
+        prior_z = 0
+
     elif averages[2] >= 0.4:
         base_data.linear.x = 0.5
         if ((random.random() * 100) >= 90):
@@ -69,16 +74,6 @@ def discovery_algorithm(base_data, averages):
         else:
             base_data.angular.z = (random.random() * 0.2) - 0.1
         prior_z = base_data.angular.z
-
-    elif (abs(odom_recent[0].pose.pose.position.x - odom_recent[1].pose.pose.position.x) <= 0.01) & (
-            abs(odom_recent[0].pose.pose.position.y - odom_recent[1].pose.pose.position.y) <= 0.01):
-        base_data.linear.x = -0.5
-        base_data.angular.z = (random.random() * 0.1) - 0.05
-        prior_z = 0
-
-    else:
-        base_data.linear.x = -1
-        prior_z = 0
 
     cmd_pub.publish(base_data)
 
