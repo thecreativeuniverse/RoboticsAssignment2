@@ -6,8 +6,9 @@ from std_msgs.msg import Float64MultiArray, String
 from nav_msgs.msg import Odometry
 from tf.msg import tfMessage
 from copy import deepcopy
+import time
 
-object_threshold = 15
+object_threshold = 35
 threshold_met = False
 odom_recent = None
 cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=100)
@@ -144,10 +145,18 @@ def known_objects_callback(msg):
 
 def listener():
     rospy.init_node("Navigation", anonymous=True)
-    rospy.Subscriber('proximity_sensor', Float64MultiArray, callback)
     rospy.Subscriber('odom', Odometry, odom_callback)
     rospy.Subscriber('tf', tfMessage, tf_callback)
     rospy.Subscriber('known_objects', String, known_objects_callback)
+
+    base_data = Twist()
+    base_data.angular.z = 0.8
+    base_data.linear.x = 0
+    endTime = time.time() + 10
+    while ((time.time() < endTime)):
+        cmd_pub.publish(base_data)
+
+    rospy.Subscriber('proximity_sensor', Float64MultiArray, callback)
 
     rospy.spin()
 
