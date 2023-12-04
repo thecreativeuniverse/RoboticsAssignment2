@@ -1,7 +1,19 @@
 #!/bin/bash
+world=""
+working_dir=$(pwd)
+
+pip install -r requirements.txt
+
+echo "$working_dir"
+if [ $# -gt 0 ]
+  then
+    arg="$1"
+    world="${working_dir}/${arg}/world.world"
+  else
+    world="${working_dir}/src/mapping/out/world.world"
+    python3 src/mapping/mapping.py
+fi
 
 source devel/setup.sh
 catkin_make
-pip install -r requirements.txt
-python3 src/mapping/mapping.py
-roslaunch main stage.launch 2> >(grep -v TF_REPEATED_DATA buffer_core)
+roslaunch main stage.launch world_args:="$world" 2> >(grep -v TF_REPEATED_DATA buffer_core)
